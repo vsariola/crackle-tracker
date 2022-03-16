@@ -8,6 +8,7 @@ SONGST_ADDR = 0x14008
 ORDLEN_ADDR = 0x14004
 PATREP_ADDR = 0x14005
 PATLEN_ADDR = 0x14006
+NOTEDUR_ADDR = 0x14017
 
 ords = {}
 pats = {}
@@ -157,7 +158,16 @@ function sound()
  for i = 0, 4 do
   rect(83 + i * 7, pat * 7 + 15, 7, 7, 2 + i)
  end
- t = (t + 1) % stic
+ for i = 0, 3 do
+  k = t * peek(NOTEDUR_ADDR + i * 8) / 8 // (16 - peek(TEMPO_ADDR)) % peek(PATLEN_ADDR)
+  rect(128 + i * 7, k * 7 + 15, 7, 7, 2 + i)
+ end
+
+ t = (t + 1)
+ if t >= stic then
+  t = 0
+  playing = false
+ end
 end
 
 ---------------------
@@ -169,7 +179,7 @@ function clear()
   poke(0x14004 + i, 0)
  end
  for i = 0, 3 do
-  poke(0x14017 + i * 8, 8)
+  poke(NOTEDUR_ADDR + i * 8, 8)
  end
  poke(ORDLEN_ADDR, 8)
  poke(PATREP_ADDR, 8)
@@ -439,3 +449,4 @@ end
 -- <PALETTE>
 -- 000:1a1c2c5d275db13e53ef7d57ffcd75a7f07038b76425717929366f3b5dc941a6f673eff7f4f4f494b0c2566c86333c57
 -- </PALETTE>
+
