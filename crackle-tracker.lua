@@ -182,7 +182,7 @@ function sound()
    local oct = peek(OCTAVE_ADDR + i * 8)
    rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
    note = note - peek(SLIDE_ADDR + i * 8) * (notepos % noteticks)
-   sfx(wave, oct * 12 + note + peek(KEY_ADDR) ~ 0, 9, i, env)
+   sfx(wave, oct * 12 + note + peek(KEY_ADDR) ~ 0, 2, i, env)
   end
  end
 
