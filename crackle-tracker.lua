@@ -266,9 +266,121 @@ end
  exit()
 end
 
+function interp(s, tab)
+ return (s:gsub(
+  "($%b{})",
+  function(w)
+   return tab[w:sub(3, -2)] or w
+  end
+ ))
+end
+
 function export()
- trace("\nExport does not work yet :(")
+ local tmpl =
+  [[
+-- exported from crackle tracker
+data = ${data}
+
+t=0
+
+function TIC()
+  for k=0,$maxChan do
+    p=t//$partLen
+    e=t/$noteTicks
+    n=data[$patLen*data[$songLen*k+p+$ordInd]+$patInd+e//$noteTicks%$patLen]
+    S[-k]=-e%$noteTicks%(16*n*data[$songLen*k+p+$ordInd]+1)
+    sfx(
+     k,
+     $globalPitch-- adjust pitch for song
+      +data[k+$pitchInd]
+      +n
+      ~0,
+     2,
+     k,
+     S[-k]
+    )
+   end
+  t=t+1,t<$songLen or exit()
+end
+]]
+ local code = interp(tmpl, {data = "foo"})
+ trace("\n" .. code)
  exit()
+end
+
+function compare(a1, a2, s1, s2, l)
+ for i = 0, l - 1 do
+  if a1[s1 + i] ~= a2[s2 + i] then
+   return false
+  end
+ end
+ return true
+end
+
+function overlap(a1, a2)
+ local max = 0
+ local t1 = 0
+ local t2 = #a1
+ for i = 2 - #a2, #a1 do
+  local l = math.max(1, i)
+  local r = math.min(i + #a2 - 1, #a1)
+  local w = r - l + 1
+  local s = 1 + l - i
+  if max < w and compare(a1, a2, l, s, w) then
+   max = w
+   t1 = s
+   t2 = i + s - 1
+  end
+ end
+ ret = {}
+ table.move(a1, 1, #a1, t1, ret)
+ table.move(a2, 1, #a2, t2, ret)
+ return max, ret, t1, t2
+end
+
+function superArray(...)
+ local arrs = {...}
+ local inds = {}
+ for i = 1, #arrs do
+  inds[i] = {}
+  inds[i][i] = 1
+ end
+ local len = #arrs
+ while len > 1 do
+  local max = 0
+  local mi, mj, ms
+  for i = 1, len do
+   for j = i + 1, len do
+    m, s, t1, t2 = overlap(arrs[i], arrs[j])
+    if max < m then
+     max = m
+     ms, mi, mj, mt1, mt2 = s, i, j, t1, t2
+    end
+   end
+  end
+  if max == 0 then
+   -- no overlap, just join the last element with first
+   arrs[1] = {table.unpack(arrs[1])}
+   local l = #(arrs[1])
+   table.move(arrs[len], 1, #(arrs[len]), l + 1, arrs[1])
+   for i, v in pairs(inds[len]) do
+    inds[1][i] = v + l
+   end
+  else
+   -- move mi+mj to mi, and last to where mj was
+   arrs[mi] = ms
+   for i, v in pairs(inds[mi]) do
+    inds[mi][i] = v + mt1 - 1
+   end
+   for i, v in pairs(inds[mj]) do
+    inds[mi][i] = v + mt2 - 1
+   end
+   arrs[mj] = arrs[len]
+   inds[mj] = inds[len]
+  end
+  len = len - 1
+ end
+ return arrs[1], inds[1]
 end
 
 ---------------
