@@ -201,6 +201,9 @@ function clear()
  memset(0x14004, 0, 1024)
  memset(PATS_ADDR, 255, 16 * 16)
  memset(ORDLIST_ADDR, 255, 5 * 16)
+ poke(ORDLIST_ADDR, 0)
+ poke(PATS_ADDR, 0)
+
  for i = 0, 3 do
   poke(NOTEDUR_ADDR + i * 8, 8)
  end
@@ -430,7 +433,7 @@ function iconbtn(s, i, x, y, cb, tip, w)
  w = w or 2
  mx, my, l = mouse()
  if mx >= x and my >= y and mx < x + 8 * w and my < y + 8 * w then
-  if not s.l and l then
+  if not s.l and l and cb then
    cb()
   end
   for i = 0, 15 do
