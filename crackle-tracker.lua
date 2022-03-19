@@ -12,6 +12,7 @@ WAVE_ADDR = 0x14014
 OCTAVE_ADDR = 0x14015
 SEMITN_ADDR = 0x14016
 NOTEDUR_ADDR = 0x14017
+SLIDE_ADDR = 0x1401A
 ORDLIST_ADDR = 0x14054
 PATS_ADDR = 0x140A4
 KEY_ADDR = 0x14008
@@ -25,10 +26,11 @@ ilab = {
  "Semitn",
  "NoteDur",
  "Fill",
- "Mute"
+ "Mute",
+ "Slide"
 }
-imin = {0, 0, 0, 1, 0, 0}
-imax = {3, 7, 11, 16, 7, 1}
+imin = {0, 0, 0, 1, 0, 0, 0}
+imax = {3, 7, 11, 16, 7, 1, 16}
 song = {}
 smin = {1, 0, 1, 0, 0}
 smax = {16, 16, 16, 7, 11}
@@ -98,16 +100,16 @@ function TIC()
 
  print("Instrs", 46, 0, 15, 1, 1, 5)
  label(ilab, 21, 16, 24, 2)
- editor(inst, 45, 15, 4, 6, 1, 8, imin, imax, true)
+ editor(inst, 45, 15, 4, 7, 1, 8, imin, imax, true)
  hextitle(46, 8, 4)
 
  print("Order", 84, 0, 15, 1, 1, 1)
- editor(ords, 83, 15, 5, peek(ORDLEN_ADDR), 5, 16, 0, 15, true)
+ editor(ords, 83, 15, 5, peek(ORDLEN_ADDR), 5, 16, -1, 15, true)
  spr(0, 112, 7, 0)
  hextitle(84, 8, 4)
 
  print("Patterns", 129, 0, 15, 1, 1, 1)
- editor(pats, 128, 15, 16, peek(PATLEN_ADDR), 10, 16, 0, 35, true)
+ editor(pats, 128, 15, 16, peek(PATLEN_ADDR), 10, 16, -1, 35, true)
  hextitle(129, 8, 16)
 
  if keyp(49) then
@@ -165,17 +167,23 @@ function sound()
   rect(83 + i * 7, pat * 7 + 15, 7, 7, 2 + i)
  end
  for i = 0, 3 do
+  poke(0x100E4 + 66 * i, i * 16)
+  local wave = peek(WAVE_ADDR + i * 8)
   local notepos = t * peek(NOTEDUR_ADDR + i * 8) / 8
   local noteticks = (16 - peek(TEMPO_ADDR))
   local row = notepos // noteticks % peek(PATLEN_ADDR)
   local col = peek(ORDLIST_ADDR + i * 16 + pat)
-  local note = peek(PATS_ADDR + col * 16 + row)
-  --local env = (note + 15) // 16 * (noteticks - 1 - notepos % noteticks)
-  local env = (note + 15) // 16 * (-notepos % noteticks - 1)
-  local oct = peek(OCTAVE_ADDR + i * 8)
-  rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
-  local wave = peek(WAVE_ADDR + i * 8)
-  sfx(wave, oct * 12 + note + peek(KEY_ADDR), 9, i, env)
+  if col < 255 then
+   local note = peek(PATS_ADDR + col * 16 + row)
+   local env = -notepos % noteticks - 1
+   if note == 255 then
+    env = 0
+   end
+   local oct = peek(OCTAVE_ADDR + i * 8)
+   rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
+   note = note - peek(SLIDE_ADDR + i * 8) * (notepos % noteticks)
+   sfx(wave, oct * 12 + note + peek(KEY_ADDR) ~ 0, 9, i, env)
+  end
  end
 
  t = (t + 1)
@@ -190,9 +198,9 @@ end
 ---------------------
 
 function clear()
- for i = 0, 511 do
-  poke(0x14004 + i, 0)
- end
+ memset(0x14004, 0, 1024)
+ memset(PATS_ADDR, 255, 16 * 16)
+ memset(ORDLIST_ADDR, 255, 5 * 16)
  for i = 0, 3 do
   poke(NOTEDUR_ADDR + i * 8, 8)
  end
@@ -275,6 +283,18 @@ function interp(s, tab)
  ))
 end
 
+function constant(arr)
+ if #arr < 2 then
+  return true
+ end
+ for i = 2, #arr do
+  if arr[i] ~= arr[i - 1] then
+   return false
+  end
+ end
+ return true
+end
+
 function export()
  local tmpl =
   [[
@@ -285,7 +305,7 @@ t=0
 
 function TIC()
   for k=0,$maxChan do
-    p=t//$partLen
+    p=t//$partLen cr
     e=t/$noteTicks
     n=data[$patLen*data[$songLen*k+p+$ordInd]+$patInd+e//$noteTicks%$patLen]
     S[-k]=-e%$noteTicks%(16*n*data[$songLen*k+p+$ordInd]+1)
@@ -473,8 +493,11 @@ function editor(s, x, y, w, h, ad, st, mi, ma, hex)
   if keyp(54) then
    poke(m, peek(m) + 1)
   end
-  if keyp(55) and peek(m) > 0 then
+  if keyp(55) then
    poke(m, peek(m) - 1)
+  end
+  if keyp(52) then
+   poke(m, 255)
   end
   if keyp(60) then
    s.x = s.x - 1
@@ -487,9 +510,6 @@ function editor(s, x, y, w, h, ad, st, mi, ma, hex)
   end
   if keyp(59) then
    s.y = s.y + 1
-  end
-  if keyp(52) then
-   poke(ad + s.x * st + s.y, 0)
   end
   for i = 0, 9 do
    if keyp(27 + i) then
@@ -521,6 +541,7 @@ function editor(s, x, y, w, h, ad, st, mi, ma, hex)
   for j = 0, h - 1 do
    local a = ad + i * st + j
    v = peek(a)
+   v = (v + 128) % 256 - 128 -- treat these as signed 8-bit values
    if type(mi) == "table" then
     v = v < mi[j + 1] and mi[j + 1] or v
    else
@@ -534,6 +555,9 @@ function editor(s, x, y, w, h, ad, st, mi, ma, hex)
    poke(a, v)
    if hex and v >= 10 then
     v = string.char(65 + v - 10)
+   end
+   if v == -1 then
+    v = "-"
    end
    print(v, i * 7 + x + 1, j * 7 + y + 1, c, 1)
   end
