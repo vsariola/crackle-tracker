@@ -8,7 +8,13 @@ SONGST_ADDR = 0x14008
 ORDLEN_ADDR = 0x14004
 PATREP_ADDR = 0x14005
 PATLEN_ADDR = 0x14006
+WAVE_ADDR = 0x14014
+OCTAVE_ADDR = 0x14015
+SEMITN_ADDR = 0x14016
 NOTEDUR_ADDR = 0x14017
+ORDLIST_ADDR = 0x14054
+PATS_ADDR = 0x140A4
+KEY_ADDR = 0x14008
 
 ords = {}
 pats = {}
@@ -159,8 +165,17 @@ function sound()
   rect(83 + i * 7, pat * 7 + 15, 7, 7, 2 + i)
  end
  for i = 0, 3 do
-  k = t * peek(NOTEDUR_ADDR + i * 8) / 8 // (16 - peek(TEMPO_ADDR)) % peek(PATLEN_ADDR)
-  rect(128 + i * 7, k * 7 + 15, 7, 7, 2 + i)
+  local notepos = t * peek(NOTEDUR_ADDR + i * 8) / 8
+  local noteticks = (16 - peek(TEMPO_ADDR))
+  local row = notepos // noteticks % peek(PATLEN_ADDR)
+  local col = peek(ORDLIST_ADDR + i * 16 + pat)
+  local note = peek(PATS_ADDR + col * 16 + row)
+  --local env = (note + 15) // 16 * (noteticks - 1 - notepos % noteticks)
+  local env = (note + 15) // 16 * (-notepos % noteticks - 1)
+  local oct = peek(OCTAVE_ADDR + i * 8)
+  rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
+  local wave = peek(WAVE_ADDR + i * 8)
+  sfx(wave, oct * 12 + note + peek(KEY_ADDR), 9, i, env)
  end
 
  t = (t + 1)
@@ -449,4 +464,3 @@ end
 -- <PALETTE>
 -- 000:1a1c2c5d275db13e53ef7d57ffcd75a7f07038b76425717929366f3b5dc941a6f673eff7f4f4f494b0c2566c86333c57
 -- </PALETTE>
-
