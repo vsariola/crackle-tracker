@@ -247,14 +247,14 @@ end
 function save()
  local s = "\n-- saveid: crackle\n"
  s = s .. "d=\n"
- for i = 0, 12 do
+ for i = 0, 31 do
   s = s .. '"'
-  for j = 0, 31 do
-   local v = peek(0x14004 + i * 32 + j)
-   s = s .. string.char(v + 35)
+  for j = 0, 15 do
+   local v = peek(0x14004 + i * 16 + j)
+   s = s .. string.char(v % 16 + 35) .. string.char(v // 16 + 35)
   end
   s = s .. '"'
-  if i < 15 then
+  if i < 31 then
    s = s .. ".."
   end
   s = s .. "\n"
@@ -264,8 +264,10 @@ function save()
   [[
 for i=0,511 do
  v=string.byte(
-  string.sub(d,i+1,i+1)
- )-35
+  string.sub(d,i*2+1,i*2+1)
+ )-35+(string.byte(
+  string.sub(d,i*2+2,i*2+2)
+ )-35)*16
  poke(0x14004+i,v)
 end
 function TIC()
