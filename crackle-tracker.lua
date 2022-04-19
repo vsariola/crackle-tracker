@@ -12,6 +12,7 @@ WAVE_ADDR = 0x14014
 OCTAVE_ADDR = 0x14015
 SEMITN_ADDR = 0x14016
 NOTEDUR_ADDR = 0x14017
+MUTE_ADDR = 0x14019
 SLIDE_ADDR = 0x1401A
 ORDLIST_ADDR = 0x14054
 PATS_ADDR = 0x140A4
@@ -44,11 +45,6 @@ slab = {
 savebtn = {}
 expbtn = {}
 newbtn = {}
-cutbtn = {}
-copybtn = {}
-pastebtn = {}
-undobtn = {}
-redobtn = {}
 rewindbtn = {}
 playbtn = {}
 stopbtn = {}
@@ -82,12 +78,6 @@ function TIC()
  iconbtn(newbtn, 1, 0, 14, new, "New")
  iconbtn(savebtn, 3, 0, 30, save, "Save")
  iconbtn(expbtn, 5, 0, 46, export, "Export")
-
- iconbtn(cutbtn, 32, 201, 0, cut, "Cut (ctrl+x)", 1)
- iconbtn(copybtn, 33, 209, 0, cut, "Copy (ctrl+c)", 1)
- iconbtn(pastebtn, 34, 217, 0, cut, "Paste (ctrl+p)", 1)
- iconbtn(undobtn, 35, 225, 0, cut, "Undo (ctrl+z)", 1)
- iconbtn(redobtn, 36, 233, 0, cut, "Redo (ctrl+y)", 1)
 
  iconbtn(rewindbtn, 48, 29, 77, rewind, "Play from start", 1)
  iconbtn(playbtn, 49, 37, 77, play, "Play (space)", 1)
@@ -168,6 +158,10 @@ function sound()
  end
  for i = 0, 3 do
   poke(0x100E4 + 66 * i, i * 16)
+  local mute = peek(MUTE_ADDR + i * 8)
+  if mute > 0 then
+   continue
+  end
   local wave = peek(WAVE_ADDR + i * 8)
   local notepos = t * peek(NOTEDUR_ADDR + i * 8) / 8
   local noteticks = (16 - peek(TEMPO_ADDR))
@@ -180,9 +174,10 @@ function sound()
     env = 0
    end
    local oct = peek(OCTAVE_ADDR + i * 8)
+   local st = peek(SEMITN_ADDR + i * 8)
    rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
    note = note - peek(SLIDE_ADDR + i * 8) * (notepos % noteticks)
-   sfx(wave, oct * 12 + note + peek(KEY_ADDR) ~ 0, 2, i, env)
+   sfx(wave, oct * 12 + st + note + peek(KEY_ADDR) ~ 0, 3, i, env)
   end
  end
 
@@ -568,6 +563,7 @@ function editor(s, x, y, w, h, ad, st, mi, ma, hex)
   end
  end
 end
+
 -- <TILES>
 -- 000:0001100000010100000100000111000011110000011000000000000000000000
 -- 001:1111111111111111111eeeee111effff111effff111effff111effff111effff
