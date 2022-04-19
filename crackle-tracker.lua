@@ -152,19 +152,25 @@ end
 function sound()
  local ptic = ptic()
  local stic = ptic * peek(ORDLEN_ADDR)
+ local noteticks = (16 - peek(TEMPO_ADDR))
  pat = t // ptic
  for i = 0, 4 do
   rect(83 + i * 7, pat * 7 + 15, 7, 7, 2 + i)
+ end
+ local keypat = peek(ORDLIST_ADDR + 64 + pat)
+ local key = 0
+ if keypat < 255 then
+  local row = t / 8 // noteticks % peek(PATLEN_ADDR)
+  key = peek(PATS_ADDR + keypat * 16 + row)
  end
  for i = 0, 3 do
   poke(0x100E4 + 66 * i, i * 16)
   local mute = peek(MUTE_ADDR + i * 8)
   if mute > 0 then
-   continue
+   goto continue
   end
   local wave = peek(WAVE_ADDR + i * 8)
   local notepos = t * peek(NOTEDUR_ADDR + i * 8) / 8
-  local noteticks = (16 - peek(TEMPO_ADDR))
   local row = notepos // noteticks % peek(PATLEN_ADDR)
   local col = peek(ORDLIST_ADDR + i * 16 + pat)
   if col < 255 then
@@ -176,9 +182,10 @@ function sound()
    local oct = peek(OCTAVE_ADDR + i * 8)
    local st = peek(SEMITN_ADDR + i * 8)
    rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
-   note = note - peek(SLIDE_ADDR + i * 8) * (notepos % noteticks)
+   note = note - peek(SLIDE_ADDR + i * 8) * (notepos % noteticks) + key
    sfx(wave, oct * 12 + st + note + peek(KEY_ADDR) ~ 0, 3, i, env)
   end
+  ::continue::
  end
 
  t = (t + 1)
