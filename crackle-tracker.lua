@@ -13,6 +13,7 @@ OCTAVE_ADDR = 0x14015
 SEMITN_ADDR = 0x14016
 NOTEDUR_ADDR = 0x14017
 MUTE_ADDR = 0x14019
+FILL_ADDR = 0x14018
 SLIDE_ADDR = 0x1401A
 ORDLIST_ADDR = 0x14054
 PATS_ADDR = 0x140A4
@@ -175,6 +176,8 @@ function sound()
     local row = notepos // noteticks % peek(PATLEN_ADDR)
     local col = peek(ORDLIST_ADDR + i * 16 + pat)
     if col < 255 then
+      local filldiv = ((peek(PATREP_ADDR) - peek(FILL_ADDR + i * 8)) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
+      if filldiv > 0 then col = col + t % ptic // filldiv end
       local note = peek(PATS_ADDR + col * 16 + row)
       local env = -notepos % noteticks - 1
       if note == 255 then
