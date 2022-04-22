@@ -22,25 +22,25 @@ ords = {}
 pats = {}
 inst = {}
 ilab = {
- "Wave",
- "Octave",
- "Semitn",
- "NoteDur",
- "Fill",
- "Mute",
- "Slide"
+  "Wave",
+  "Octave",
+  "Semitn",
+  "NoteDur",
+  "Fill",
+  "Mute",
+  "Slide"
 }
-imin = {0, 0, 0, 1, 0, 0, 0}
-imax = {3, 7, 11, 16, 7, 1, 16}
+imin = { 0, 0, 0, 1, 0, 0, 0 }
+imax = { 3, 7, 11, 16, 7, 1, 16 }
 song = {}
-smin = {1, 0, 1, 0, 0}
-smax = {16, 16, 16, 7, 11}
+smin = { 1, 0, 1, 0, 0 }
+smax = { 16, 16, 16, 7, 11 }
 slab = {
- "OrdLen",
- "PatReps",
- "PatLen",
- "Tempo",
- "Semitn"
+  "OrdLen",
+  "PatReps",
+  "PatLen",
+  "Tempo",
+  "Semitn"
 }
 savebtn = {}
 expbtn = {}
@@ -49,150 +49,151 @@ rewindbtn = {}
 playbtn = {}
 stopbtn = {}
 playing = false
-taborder = {inst, ords, pats, song}
+taborder = { inst, ords, pats, song }
 focus = nil
 dialog = nil
 t = 0
 
 function TIC()
- cls()
- if dialog ~= nil then
-  dialog()
-  return
- end
-
- if playing then
-  sound()
- end
-
- local dur = peek(ORDLEN_ADDR) * ptic() / 60
- local dur_min = math.floor(dur / 60)
- local dur_s = math.floor(dur - dur_min * 60)
- local dur_str = (dur_min > 0 and (dur_min .. "min ") or "") .. dur_s .. "s"
- print("Song duration: " .. dur_str, 0, 130, 15, 1, 1, 1)
- bpm = 30 * 60 / (16 - peek(TEMPO_ADDR))
- print("BPM: " .. math.floor(bpm + .5), 130, 130, 15, 1, 1, 1)
-
- print("Crackle\nTracker", 0, 0, 15, 1, 1, 1)
- print("v0.1", 225, 131, 15, 1, 1, 1)
- iconbtn(newbtn, 1, 0, 14, new, "New")
- iconbtn(savebtn, 3, 0, 30, save, "Save")
- iconbtn(expbtn, 5, 0, 46, export, "Export")
-
- iconbtn(rewindbtn, 48, 29, 77, rewind, "Play from start", 1)
- iconbtn(playbtn, 49, 37, 77, play, "Play (space)", 1)
- iconbtn(stopbtn, 50, 45, 77, stop, "Stop (space)", 1)
- rect(10, 85, 41, 1, 1)
-
- print("Song", 10, 78, 15, 1, 1, 5)
- label(slab, 21, 88, 24, 2)
- editor(song, 45, 87, 1, 5, 0, 1, smin, smax)
-
- print("Instrs", 46, 0, 15, 1, 1, 5)
- label(ilab, 21, 16, 24, 2)
- editor(inst, 45, 15, 4, 7, 1, 8, imin, imax, true)
- hextitle(46, 8, 4)
-
- print("Order", 84, 0, 15, 1, 1, 1)
- editor(ords, 83, 15, 5, peek(ORDLEN_ADDR), 5, 16, -1, 15, true)
- spr(0, 112, 7, 0)
- hextitle(84, 8, 4)
-
- print("Patterns", 129, 0, 15, 1, 1, 1)
- editor(pats, 128, 15, 16, peek(PATLEN_ADDR), 10, 16, -1, 35, true)
- hextitle(129, 8, 16)
-
- if keyp(49) then
-  found = 0
-  for i, v in ipairs(taborder) do
-   if v == focus then
-    found = i
-    break
-   end
+  cls()
+  if dialog ~= nil then
+    dialog()
+    return
   end
-  if found ~= nil then
-   if key(64) then
-    found = found - 2
-   end
-   focus = taborder[found % #taborder + 1]
-  end
- end
- if keyp(48) then
+
   if playing then
-   stop()
-  else
-   play()
+    sound()
   end
- end
+
+  local dur = peek(ORDLEN_ADDR) * ptic() / 60
+  local dur_min = math.floor(dur / 60)
+  local dur_s = math.floor(dur - dur_min * 60)
+  local dur_str = (dur_min > 0 and (dur_min .. "min ") or "") .. dur_s .. "s"
+  print("Song duration: " .. dur_str, 0, 130, 15, 1, 1, 1)
+  bpm = 30 * 60 / (16 - peek(TEMPO_ADDR))
+  print("BPM: " .. math.floor(bpm + .5), 130, 130, 15, 1, 1, 1)
+
+  print("Crackle\nTracker", 0, 0, 15, 1, 1, 1)
+  print("v0.1", 225, 131, 15, 1, 1, 1)
+  iconbtn(newbtn, 1, 0, 14, new, "New")
+  iconbtn(savebtn, 3, 0, 30, save, "Save")
+  iconbtn(expbtn, 5, 0, 46, export, "Export")
+
+  iconbtn(rewindbtn, 48, 29, 77, rewind, "Play from start", 1)
+  iconbtn(playbtn, 49, 37, 77, play, "Play (space)", 1)
+  iconbtn(stopbtn, 50, 45, 77, stop, "Stop (space)", 1)
+  rect(10, 85, 41, 1, 1)
+
+  print("Song", 10, 78, 15, 1, 1, 5)
+  label(slab, 21, 88, 24, 2)
+  editor(song, 45, 87, 1, 5, 0, 1, smin, smax)
+
+  print("Instrs", 46, 0, 15, 1, 1, 5)
+  label(ilab, 21, 16, 24, 2)
+  editor(inst, 45, 15, 4, 7, 1, 8, imin, imax, true)
+  hextitle(46, 8, 4)
+
+  print("Order", 84, 0, 15, 1, 1, 1)
+  editor(ords, 83, 15, 5, peek(ORDLEN_ADDR), 5, 16, -1, 15, true)
+  spr(0, 112, 7, 0)
+  hextitle(84, 8, 4)
+
+  print("Patterns", 129, 0, 15, 1, 1, 1)
+  editor(pats, 128, 15, 16, peek(PATLEN_ADDR), 10, 16, -1, 35, true)
+  hextitle(129, 8, 16)
+
+  if keyp(49) then
+    found = 0
+    for i, v in ipairs(taborder) do
+      if v == focus then
+        found = i
+        break
+      end
+    end
+    if found ~= nil then
+      if key(64) then
+        found = found - 2
+      end
+      focus = taborder[found % #taborder + 1]
+    end
+  end
+  if keyp(48) then
+    if playing then
+      stop()
+    else
+      play()
+    end
+  end
 end
 
 ---------------------
 -- Sound
 ---------------------
 function rewind()
- t = 0
- playing = true
+  t = 0
+  playing = true
 end
 
 function play()
- playing = true
- if focus == ords then
-  t = ords.y * ptic()
- end
+  playing = true
+  if focus == ords then
+    t = ords.y * ptic()
+  end
 end
 
 function stop()
- playing = false
+  playing = false
 end
 
 function ptic()
- return peek(PATREP_ADDR) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR)
+  return peek(PATREP_ADDR) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR)
 end
 
 function sound()
- local ptic = ptic()
- local stic = ptic * peek(ORDLEN_ADDR)
- local noteticks = (16 - peek(TEMPO_ADDR))
- pat = t // ptic
- for i = 0, 4 do
-  rect(83 + i * 7, pat * 7 + 15, 7, 7, 2 + i)
- end
- local keypat = peek(ORDLIST_ADDR + 64 + pat)
- local key = 0
- if keypat < 255 then
-  local row = t / 8 // noteticks % peek(PATLEN_ADDR)
-  key = peek(PATS_ADDR + keypat * 16 + row)
- end
- for i = 0, 3 do
-  poke(0x100E4 + 66 * i, i * 16)
-  local mute = peek(MUTE_ADDR + i * 8)
-  if mute > 0 then
-   goto continue
+  local ptic = ptic()
+  local stic = ptic * peek(ORDLEN_ADDR)
+  local noteticks = (16 - peek(TEMPO_ADDR))
+  pat = t // ptic
+  for i = 0, 4 do
+    rect(83 + i * 7, pat * 7 + 15, 7, 7, 2 + i)
   end
-  local wave = peek(WAVE_ADDR + i * 8)
-  local notepos = t * peek(NOTEDUR_ADDR + i * 8) / 8
-  local row = notepos // noteticks % peek(PATLEN_ADDR)
-  local col = peek(ORDLIST_ADDR + i * 16 + pat)
-  if col < 255 then
-   local note = peek(PATS_ADDR + col * 16 + row)
-   local env = -notepos % noteticks - 1
-   if note == 255 then
-    env = 0
-   end
-   local oct = peek(OCTAVE_ADDR + i * 8)
-   local st = peek(SEMITN_ADDR + i * 8)
-   rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
-   note = note - peek(SLIDE_ADDR + i * 8) * (notepos % noteticks) + key
-   sfx(wave, oct * 12 + st + note + peek(KEY_ADDR) ~ 0, 3, i, env)
+  local keypat = peek(ORDLIST_ADDR + 64 + pat)
+  local key = 0
+  if keypat < 255 then
+    local row = t / 8 // noteticks % peek(PATLEN_ADDR)
+    key = peek(PATS_ADDR + keypat * 16 + row)
+    rect(128 + keypat * 7, row * 7 + 15, 7, 7, 6)
   end
-  ::continue::
- end
+  for i = 0, 3 do
+    poke(0x100E4 + 66 * i, i * 16)
+    local mute = peek(MUTE_ADDR + i * 8)
+    if mute > 0 then
+      goto continue
+    end
+    local wave = peek(WAVE_ADDR + i * 8)
+    local notepos = t * peek(NOTEDUR_ADDR + i * 8) / 8
+    local row = notepos // noteticks % peek(PATLEN_ADDR)
+    local col = peek(ORDLIST_ADDR + i * 16 + pat)
+    if col < 255 then
+      local note = peek(PATS_ADDR + col * 16 + row)
+      local env = -notepos % noteticks - 1
+      if note == 255 then
+        env = 0
+      end
+      local oct = peek(OCTAVE_ADDR + i * 8)
+      local st = peek(SEMITN_ADDR + i * 8)
+      rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
+      note = note - peek(SLIDE_ADDR + i * 8) * (notepos % noteticks) + key
+      sfx(wave, oct * 12 + st + note + peek(KEY_ADDR) ~ 0, 3, i, env)
+    end
+    ::continue::
+  end
 
- t = (t + 1)
- if t >= stic then
-  t = 0
-  playing = false
- end
+  t = (t + 1)
+  if t >= stic then
+    t = 0
+    playing = false
+  end
 end
 
 ---------------------
@@ -200,70 +201,69 @@ end
 ---------------------
 
 function clear()
- memset(0x14004, 0, 1024)
- memset(PATS_ADDR, 255, 16 * 16)
- memset(ORDLIST_ADDR, 255, 5 * 16)
- poke(ORDLIST_ADDR, 0)
- poke(PATS_ADDR, 0)
+  memset(0x14004, 0, 1024)
+  memset(PATS_ADDR, 255, 16 * 16)
+  memset(ORDLIST_ADDR, 255, 5 * 16)
+  poke(ORDLIST_ADDR, 0)
+  poke(PATS_ADDR, 0)
 
- for i = 0, 3 do
-  poke(NOTEDUR_ADDR + i * 8, 8)
- end
- poke(ORDLEN_ADDR, 8)
- poke(PATREP_ADDR, 8)
- poke(PATLEN_ADDR, 8)
+  for i = 0, 3 do
+    poke(NOTEDUR_ADDR + i * 8, 8)
+  end
+  poke(ORDLEN_ADDR, 8)
+  poke(PATREP_ADDR, 8)
+  poke(PATLEN_ADDR, 8)
 end
 
 function new()
- yesbtn = {}
- nobtn = {}
- dialog = function()
-  rect(20, 20, 200, 96, 15)
-  label("Warning: Clear song data?", 20, 50, 200, 1, 12)
-  button(
-   yesbtn,
-   70,
-   80,
-   40,
-   10,
-   "Yes",
-   function()
-    clear()
-    dialog = nil
-   end
-  )
-  button(
-   nobtn,
-   130,
-   80,
-   40,
-   10,
-   "No",
-   function()
-    dialog = nil
-   end
-  )
- end
+  yesbtn = {}
+  nobtn = {}
+  dialog = function()
+    rect(20, 20, 200, 96, 15)
+    label("Warning: Clear song data?", 20, 50, 200, 1, 12)
+    button(
+      yesbtn,
+      70,
+      80,
+      40,
+      10,
+      "Yes",
+      function()
+        clear()
+        dialog = nil
+      end
+    )
+    button(
+      nobtn,
+      130,
+      80,
+      40,
+      10,
+      "No",
+      function()
+        dialog = nil
+      end
+    )
+  end
 end
 
 function save()
- local s = "\n-- saveid: crackle\n"
- s = s .. "d=\n"
- for i = 0, 31 do
-  s = s .. '"'
-  for j = 0, 15 do
-   local v = peek(0x14004 + i * 16 + j)
-   s = s .. string.char(v % 16 + 35) .. string.char(v // 16 + 35)
+  local s = "\n-- saveid: crackle\n"
+  s = s .. "d=\n"
+  for i = 0, 31 do
+    s = s .. '"'
+    for j = 0, 15 do
+      local v = peek(0x14004 + i * 16 + j)
+      s = s .. string.char(v % 16 + 35) .. string.char(v // 16 + 35)
+    end
+    s = s .. '"'
+    if i < 31 then
+      s = s .. ".."
+    end
+    s = s .. "\n"
   end
-  s = s .. '"'
-  if i < 31 then
-   s = s .. ".."
-  end
-  s = s .. "\n"
- end
- s =
-  s ..
-  [[
+  s = s ..
+      [[
 for i=0,511 do
  v=string.byte(
   string.sub(d,i*2+1,i*2+1)
@@ -277,33 +277,33 @@ function TIC()
  print("Song loaded :)",9,9,time())
 end
 ]]
- trace(s)
- exit()
+  trace(s)
+  exit()
 end
 
 function interp(s, tab)
- return (s:gsub(
-  "($%b{})",
-  function(w)
-   return tab[w:sub(3, -2)] or w
-  end
- ))
+  return (s:gsub(
+    "($%b{})",
+    function(w)
+      return tab[w:sub(3, -2)] or w
+    end
+  ))
 end
 
 function constant(arr)
- if #arr < 2 then
-  return true
- end
- for i = 2, #arr do
-  if arr[i] ~= arr[i - 1] then
-   return false
+  if #arr < 2 then
+    return true
   end
- end
- return true
+  for i = 2, #arr do
+    if arr[i] ~= arr[i - 1] then
+      return false
+    end
+  end
+  return true
 end
 
 function export()
- local tmpl =
+  local tmpl =
   [[
 -- exported from crackle tracker
 data = ${data}
@@ -330,84 +330,84 @@ function TIC()
   t=t+1,t<$songLen or exit()
 end
 ]]
- local code = interp(tmpl, {data = "foo"})
- trace("\n" .. code)
- exit()
+  local code = interp(tmpl, { data = "foo" })
+  trace("\n" .. code)
+  exit()
 end
 
 function compare(a1, a2, s1, s2, l)
- for i = 0, l - 1 do
-  if a1[s1 + i] ~= a2[s2 + i] then
-   return false
+  for i = 0, l - 1 do
+    if a1[s1 + i] ~= a2[s2 + i] then
+      return false
+    end
   end
- end
- return true
+  return true
 end
 
 function overlap(a1, a2)
- local max = 0
- local t1 = 0
- local t2 = #a1
- for i = 2 - #a2, #a1 do
-  local l = math.max(1, i)
-  local r = math.min(i + #a2 - 1, #a1)
-  local w = r - l + 1
-  local s = 1 + l - i
-  if max < w and compare(a1, a2, l, s, w) then
-   max = w
-   t1 = s
-   t2 = i + s - 1
+  local max = 0
+  local t1 = 0
+  local t2 = #a1
+  for i = 2 - #a2, #a1 do
+    local l = math.max(1, i)
+    local r = math.min(i + #a2 - 1, #a1)
+    local w = r - l + 1
+    local s = 1 + l - i
+    if max < w and compare(a1, a2, l, s, w) then
+      max = w
+      t1 = s
+      t2 = i + s - 1
+    end
   end
- end
- ret = {}
- table.move(a1, 1, #a1, t1, ret)
- table.move(a2, 1, #a2, t2, ret)
- return max, ret, t1, t2
+  ret = {}
+  table.move(a1, 1, #a1, t1, ret)
+  table.move(a2, 1, #a2, t2, ret)
+  return max, ret, t1, t2
 end
 
 function superArray(...)
- local arrs = {...}
- local inds = {}
- for i = 1, #arrs do
-  inds[i] = {}
-  inds[i][i] = 1
- end
- local len = #arrs
- while len > 1 do
-  local max = 0
-  local mi, mj, ms
-  for i = 1, len do
-   for j = i + 1, len do
-    m, s, t1, t2 = overlap(arrs[i], arrs[j])
-    if max < m then
-     max = m
-     ms, mi, mj, mt1, mt2 = s, i, j, t1, t2
+  local arrs = { ... }
+  local inds = {}
+  for i = 1, #arrs do
+    inds[i] = {}
+    inds[i][i] = 1
+  end
+  local len = #arrs
+  while len > 1 do
+    local max = 0
+    local mi, mj, ms
+    for i = 1, len do
+      for j = i + 1, len do
+        m, s, t1, t2 = overlap(arrs[i], arrs[j])
+        if max < m then
+          max = m
+          ms, mi, mj, mt1, mt2 = s, i, j, t1, t2
+        end
+      end
     end
-   end
+    if max == 0 then
+      -- no overlap, just join the last element with first
+      arrs[1] = { table.unpack(arrs[1]) }
+      local l = #(arrs[1])
+      table.move(arrs[len], 1, #(arrs[len]), l + 1, arrs[1])
+      for i, v in pairs(inds[len]) do
+        inds[1][i] = v + l
+      end
+    else
+      -- move mi+mj to mi, and last to where mj was
+      arrs[mi] = ms
+      for i, v in pairs(inds[mi]) do
+        inds[mi][i] = v + mt1 - 1
+      end
+      for i, v in pairs(inds[mj]) do
+        inds[mi][i] = v + mt2 - 1
+      end
+      arrs[mj] = arrs[len]
+      inds[mj] = inds[len]
+    end
+    len = len - 1
   end
-  if max == 0 then
-   -- no overlap, just join the last element with first
-   arrs[1] = {table.unpack(arrs[1])}
-   local l = #(arrs[1])
-   table.move(arrs[len], 1, #(arrs[len]), l + 1, arrs[1])
-   for i, v in pairs(inds[len]) do
-    inds[1][i] = v + l
-   end
-  else
-   -- move mi+mj to mi, and last to where mj was
-   arrs[mi] = ms
-   for i, v in pairs(inds[mi]) do
-    inds[mi][i] = v + mt1 - 1
-   end
-   for i, v in pairs(inds[mj]) do
-    inds[mi][i] = v + mt2 - 1
-   end
-   arrs[mj] = arrs[len]
-   inds[mj] = inds[len]
-  end
-  len = len - 1
- end
- return arrs[1], inds[1]
+  return arrs[1], inds[1]
 end
 
 ---------------
@@ -415,160 +415,160 @@ end
 ---------------
 
 function label(s, x, y, w, a, c, b)
- if c == nil then
-  c = 15
- end
- if type(s) == "table" then
-  for i = 1, #s do
-   label(s[i], x, y + (i - 1) * 7, w, a)
+  if c == nil then
+    c = 15
   end
-  return
- end
- local m = print(s, 0, -99, 15, 1, 1, 1)
- w = w or (m + 1)
- if b then
-  rect(x, y - 1, w, 7, b)
- end
- local k = x + (w - m) * a / 2
- print(s, k, y, c, 1, 1, 1)
+  if type(s) == "table" then
+    for i = 1, #s do
+      label(s[i], x, y + (i - 1) * 7, w, a)
+    end
+    return
+  end
+  local m = print(s, 0, -99, 15, 1, 1, 1)
+  w = w or (m + 1)
+  if b then
+    rect(x, y - 1, w, 7, b)
+  end
+  local k = x + (w - m) * a / 2
+  print(s, k, y, c, 1, 1, 1)
 end
 
 function iconbtn(s, i, x, y, cb, tip, w)
- w = w or 2
- mx, my, l = mouse()
- if mx >= x and my >= y and mx < x + 8 * w and my < y + 8 * w then
-  if not s.l and l and cb then
-   cb()
+  w = w or 2
+  mx, my, l = mouse()
+  if mx >= x and my >= y and mx < x + 8 * w and my < y + 8 * w then
+    if not s.l and l and cb then
+      cb()
+    end
+    for i = 0, 15 do
+      poke4(0x3FF0 * 2 + i, i - 1)
+    end
+    s.t = (s.t or 0) + 1
+    if s.t == 40 then
+      s.x, s.y = mx, my + 5
+    end
+  else
+    s.t = 0
   end
+  spr(i, x, y, 1, 1, 0, 0, w, w)
   for i = 0, 15 do
-   poke4(0x3FF0 * 2 + i, i - 1)
+    poke4(0x3FF0 * 2 + i, i)
   end
-  s.t = (s.t or 0) + 1
-  if s.t == 40 then
-   s.x, s.y = mx, my + 5
+  if tip and s.t >= 40 then
+    label(tip, s.x, s.y, nil, 2, 0, 13)
+    -- local w = print(tip,1e3,0)
+    -- rect(s.x,s.y,w+2,8,13)
+    -- print(tip,s.x+1,s.y+1,0)
   end
- else
-  s.t = 0
- end
- spr(i, x, y, 1, 1, 0, 0, w, w)
- for i = 0, 15 do
-  poke4(0x3FF0 * 2 + i, i)
- end
- if tip and s.t >= 40 then
-  label(tip, s.x, s.y, nil, 2, 0, 13)
- -- local w = print(tip,1e3,0)
- -- rect(s.x,s.y,w+2,8,13)
- -- print(tip,s.x+1,s.y+1,0)
- end
- s.l = l
+  s.l = l
 end
 
 function button(s, x, y, w, h, t, cb)
- rect(x, y, w, h, 13)
- rect(x + 1, y + 1, w - 1, h - 1, 0)
- rect(x + 1, y + 1, w - 2, h - 2, 14)
- local m = print(t, 0, -99)
- local a = x + (w - m) / 2
- print(t, a + 1, y + 2 + 1, 0)
- print(t, a, y + 2, 12)
- mx, my, l = mouse()
- if mx >= x and my >= y and mx < x + w and my < y + h and not s.l and l then
-  cb()
- end
- s.l = l
+  rect(x, y, w, h, 13)
+  rect(x + 1, y + 1, w - 1, h - 1, 0)
+  rect(x + 1, y + 1, w - 2, h - 2, 14)
+  local m = print(t, 0, -99)
+  local a = x + (w - m) / 2
+  print(t, a + 1, y + 2 + 1, 0)
+  print(t, a, y + 2, 12)
+  mx, my, l = mouse()
+  if mx >= x and my >= y and mx < x + w and my < y + h and not s.l and l then
+    cb()
+  end
+  s.l = l
 end
 
 function hextitle(x, y, n)
- for i = 0, n - 1 do
-  local c
-  if i < 10 then
-   c = i
-  else
-   c = string.char(65 + i - 10)
+  for i = 0, n - 1 do
+    local c
+    if i < 10 then
+      c = i
+    else
+      c = string.char(65 + i - 10)
+    end
+    print(c, x + 7 * i, y, 1, 1, 1)
   end
-  print(c, x + 7 * i, y, 1, 1, 1)
- end
 end
 
 function editor(s, x, y, w, h, ad, st, mi, ma, hex)
- pw, ph = w * 7, h * 7
- s.x = s.x or 0
- s.y = s.y or 0
- ad = ad * 16 + 0x14004
- if focus == s then
-  local m = ad + s.x * st + s.y
-  if keyp(54) then
-   poke(m, peek(m) + 1)
+  pw, ph = w * 7, h * 7
+  s.x = s.x or 0
+  s.y = s.y or 0
+  ad = ad * 16 + 0x14004
+  if focus == s then
+    local m = ad + s.x * st + s.y
+    if keyp(54) then
+      poke(m, peek(m) + 1)
+    end
+    if keyp(55) then
+      poke(m, peek(m) - 1)
+    end
+    if keyp(52) then
+      poke(m, 255)
+    end
+    if keyp(60) then
+      s.x = s.x - 1
+    end
+    if keyp(61) then
+      s.x = s.x + 1
+    end
+    if keyp(58) then
+      s.y = s.y - 1
+    end
+    if keyp(59) then
+      s.y = s.y + 1
+    end
+    for i = 0, 9 do
+      if keyp(27 + i) then
+        poke(ad + s.x * st + s.y, i)
+      end
+    end
+    for i = 1, 26 do
+      if keyp(i) then
+        poke(ad + s.x * st + s.y, i + 9)
+      end
+    end
+    c = 13
+    rect(x + s.x * 7, y + s.y * 7, 7, 7, 9)
+    poke(16320 + 9 * 3, math.sin(time() / 199) ^ 2 * 128)
+  else
+    c = 14
   end
-  if keyp(55) then
-   poke(m, peek(m) - 1)
+  s.x = s.x > 0 and s.x or 0
+  s.y = s.y > 0 and s.y or 0
+  s.x = s.x < w - 1 and s.x or w - 1
+  s.y = s.y < h - 1 and s.y or h - 1
+  mx, my, lb, mb, rb, sx, sy = mouse()
+  if lb and mx > x and my > y and mx - x < pw and my - y < ph then
+    focus = s
+    s.x = (mx - x) // 7
+    s.y = (my - y) // 7
   end
-  if keyp(52) then
-   poke(m, 255)
+  for i = 0, w - 1 do
+    for j = 0, h - 1 do
+      local a = ad + i * st + j
+      v = peek(a)
+      v = (v + 128) % 256 - 128 -- treat these as signed 8-bit values
+      if type(mi) == "table" then
+        v = v < mi[j + 1] and mi[j + 1] or v
+      else
+        v = v < mi and mi or v
+      end
+      if type(ma) == "table" then
+        v = v > ma[j + 1] and ma[j + 1] or v
+      else
+        v = v > ma and ma or v
+      end
+      poke(a, v)
+      if hex and v >= 10 then
+        v = string.char(65 + v - 10)
+      end
+      if v == -1 then
+        v = "-"
+      end
+      print(v, i * 7 + x + 1, j * 7 + y + 1, c, 1)
+    end
   end
-  if keyp(60) then
-   s.x = s.x - 1
-  end
-  if keyp(61) then
-   s.x = s.x + 1
-  end
-  if keyp(58) then
-   s.y = s.y - 1
-  end
-  if keyp(59) then
-   s.y = s.y + 1
-  end
-  for i = 0, 9 do
-   if keyp(27 + i) then
-    poke(ad + s.x * st + s.y, i)
-   end
-  end
-  for i = 1, 26 do
-   if keyp(i) then
-    poke(ad + s.x * st + s.y, i + 9)
-   end
-  end
-  c = 13
-  rect(x + s.x * 7, y + s.y * 7, 7, 7, 9)
-  poke(16320 + 9 * 3, math.sin(time() / 199) ^ 2 * 128)
- else
-  c = 14
- end
- s.x = s.x > 0 and s.x or 0
- s.y = s.y > 0 and s.y or 0
- s.x = s.x < w - 1 and s.x or w - 1
- s.y = s.y < h - 1 and s.y or h - 1
- mx, my, lb, mb, rb, sx, sy = mouse()
- if lb and mx > x and my > y and mx - x < pw and my - y < ph then
-  focus = s
-  s.x = (mx - x) // 7
-  s.y = (my - y) // 7
- end
- for i = 0, w - 1 do
-  for j = 0, h - 1 do
-   local a = ad + i * st + j
-   v = peek(a)
-   v = (v + 128) % 256 - 128 -- treat these as signed 8-bit values
-   if type(mi) == "table" then
-    v = v < mi[j + 1] and mi[j + 1] or v
-   else
-    v = v < mi and mi or v
-   end
-   if type(ma) == "table" then
-    v = v > ma[j + 1] and ma[j + 1] or v
-   else
-    v = v > ma and ma or v
-   end
-   poke(a, v)
-   if hex and v >= 10 then
-    v = string.char(65 + v - 10)
-   end
-   if v == -1 then
-    v = "-"
-   end
-   print(v, i * 7 + x + 1, j * 7 + y + 1, c, 1)
-  end
- end
 end
 
 -- <TILES>
