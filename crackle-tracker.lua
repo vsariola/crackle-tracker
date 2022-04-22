@@ -309,31 +309,102 @@ function export()
   local tmpl =
   [[
 -- exported from crackle tracker
-data = ${data}
+d = {
+${data}
+}
 
-t=0
+t = 0
 
 function TIC()
-  for k=0,$maxChan do
-    p=t//$partLen cr
-    e=t/$noteTicks
-    n=data[$patLen*data[$songLen*k+p+$ordInd]+$patInd+e//$noteTicks%$patLen]
-    S[-k]=-e%$noteTicks%(16*n*data[$songLen*k+p+$ordInd]+1)
-    sfx(
-     k,
-     $globalPitch-- adjust pitch for song
-      +data[k+$pitchInd]
-      +n
-      ~0,
-     2,
-     k,
-     S[-k]
-    )
-   end
-  t=t+1,t<$songLen or exit()
+ for k=0,3 do
+  p=t//${partLen}
+  ${waveSetCode}
+  e=t*d[k+${noteDurInd}]/8
+  n=d[${patLen}*d[${ordLen}*k+p+${ordInd}]+
+   ${patInd}+e//${envSteps}%${patLen}] or 0
+  d[-k]=-e%${envSteps}%(16*n*d[${ordLen}*k+p+${ordInd}]+1)
+  sfx(
+   k,
+   ${songPitch}+12*d[k+${octInd}]+n~0,
+   2,
+   k,
+   d[-k]
+  )
+ end
+ t=t+1,t<${songTicks} or exit()
 end
 ]]
-  local code = interp(tmpl, { data = "foo" })
+  local waves = { peek(WAVE_ADDR), peek(WAVE_ADDR + 8), peek(WAVE_ADDR + 16), peek(WAVE_ADDR + 24) }
+  local waveSetCode = ""
+  if constant(waves) then
+    if waves[1] > 0 then
+      waveSetCode = "poke(65764+k*66," .. waves[1] .. ")"
+    end
+  else
+    for k = 0, 3 do
+      if waves[k + 1] > 0 then
+        if waveSetCode ~= "" then
+          waveSetCode = waveSetCode .. "\n"
+        end
+        waveSetCode = waveSetCode .. "poke(" .. (65764 + k * 66) .. "," .. waves[k + 1] * 16 .. ")"
+      end
+    end
+  end
+  local patUsed = {}
+  for k = 0, 4 do
+    for i = 0, peek(ORDLEN_ADDR) - 1 do
+      local p = peek(ORDLIST_ADDR + k * 16 + i)
+      if p ~= 255 then patUsed[p] = true end
+    end
+  end
+  local patList = {}
+  local newIndex = {}
+  local runningIndex = 1
+  for k = 0, 15 do
+    if patUsed[k] then
+      for i = 0, peek(PATLEN_ADDR) - 1 do
+        table.insert(patList, (peek(PATS_ADDR + k * 16 + i) + 1) % 256)
+      end
+      newIndex[k] = runningIndex
+      runningIndex = runningIndex + 1
+    end
+  end
+  local ordList = {}
+  for k = 0, 3 do
+    for i = 0, peek(ORDLEN_ADDR) - 1 do
+      local pat = peek(ORDLIST_ADDR + k * 16 + i)
+      if pat == 255 then
+        table.insert(ordList, 0)
+      else
+        table.insert(ordList, newIndex[pat])
+      end
+    end
+  end
+  local octaves = {}
+  for k = 0, 3 do
+    table.insert(octaves, peek(OCTAVE_ADDR + k * 8))
+  end
+  local notespeeds = { peek(NOTEDUR_ADDR), peek(NOTEDUR_ADDR + 8), peek(NOTEDUR_ADDR + 16), peek(NOTEDUR_ADDR + 24) }
+  data, inds = superArray(notespeeds, ordList, patList, octaves)
+  local dataStr = " "
+  for index, value in ipairs(data) do
+    dataStr = dataStr .. value .. ", "
+    if index % 10 == 0 then dataStr = dataStr .. "\n " end
+  end
+  local code = interp(tmpl, {
+    partLen = ptic(),
+    waveSetCode = waveSetCode,
+    data = dataStr,
+    noteDurInd = inds[1],
+    patLen = peek(PATLEN_ADDR),
+    patInd = inds[3] - peek(PATLEN_ADDR),
+    envSteps = (16 - peek(TEMPO_ADDR)),
+    ordLen = peek(ORDLEN_ADDR),
+    ordInd = inds[2],
+    songTicks = ptic() * peek(ORDLEN_ADDR),
+    songPitch = peek(SONGST_ADDR) - 1,
+    octInd = inds[4],
+  })
   trace("\n" .. code)
   exit()
 end
