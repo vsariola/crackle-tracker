@@ -317,15 +317,14 @@ t = 0
 
 function TIC()
  for k=0,3 do
-  p=t//${partLen}
-  ${waveSetCode}
+  p=t//${partLen}${waveSetCode}
   e=t*d[k+${noteDurInd}]/8
   n=d[${patLen}*d[${ordLen}*k+p+${ordInd}]+
    ${patInd}+e//${envSteps}%${patLen}] or 0
   d[-k]=-e%${envSteps}%(16*n*d[${ordLen}*k+p+${ordInd}]+1)
   sfx(
    k,
-   ${songPitch}+12*d[k+${octInd}]+n~0,
+   ${songPitch}+12*d[k+${octInd}]+n-e%${envSteps}*d[k+${slideInd}]~0,
    2,
    k,
    d[-k]
@@ -338,15 +337,12 @@ end
   local waveSetCode = ""
   if constant(waves) then
     if waves[1] > 0 then
-      waveSetCode = "poke(65764+k*66," .. waves[1] .. ")"
+      waveSetCode = "\n  poke(65764+k*66," .. waves[1] .. ")"
     end
   else
     for k = 0, 3 do
       if waves[k + 1] > 0 then
-        if waveSetCode ~= "" then
-          waveSetCode = waveSetCode .. "\n"
-        end
-        waveSetCode = waveSetCode .. "poke(" .. (65764 + k * 66) .. "," .. waves[k + 1] * 16 .. ")"
+        waveSetCode = waveSetCode .. "\n  poke(" .. (65764 + k * 66) .. "," .. waves[k + 1] * 16 .. ")"
       end
     end
   end
@@ -384,8 +380,12 @@ end
   for k = 0, 3 do
     table.insert(octaves, peek(OCTAVE_ADDR + k * 8))
   end
+  local slides = {}
+  for k = 0, 3 do
+    table.insert(octaves, peek(SLIDE_ADDR + k * 8))
+  end
   local notespeeds = { peek(NOTEDUR_ADDR), peek(NOTEDUR_ADDR + 8), peek(NOTEDUR_ADDR + 16), peek(NOTEDUR_ADDR + 24) }
-  data, inds = superArray(notespeeds, ordList, patList, octaves)
+  data, inds = superArray(notespeeds, ordList, patList, octaves, slides)
   local dataStr = " "
   for index, value in ipairs(data) do
     dataStr = dataStr .. value .. ", "
@@ -404,6 +404,7 @@ end
     songTicks = ptic() * peek(ORDLEN_ADDR),
     songPitch = peek(SONGST_ADDR) - 1,
     octInd = inds[4],
+    slideInd = inds[5],
   })
   trace("\n" .. code)
   exit()
