@@ -321,13 +321,19 @@ t = 0
 function TIC()
  for k=0,3 do
   p=t//${partLen}${waveSetCode}
-  e=t*d[k+${noteDurInd}]/8
+  e=t*d[k+${noteDurInd}]//8
   n=d[${patLen}*d[${ordLen}*k+p+${ordInd}]+
    ${patInd}+e//${envSteps}%${patLen}] or 0
   d[-k]=-e%${envSteps}%(16*n*d[${ordLen}*k+p+${ordInd}]+1)
   sfx(
    k,
-   ${songPitch}+12*d[k+${octInd}]+n-e%${envSteps}*d[k+${slideInd}]~0,
+   ${songPitch}+12*d[k+${octInd}]+n
+    -e%${envSteps}*d[k+${slideInd}]
+    +(0<d[${ordLen}*4+p+${ordInd}]
+     and d[${patLen}*d[${ordLen}*4+p+${ordInd}]
+      +${patInd}+t//${keyEnvDur}%${patLen}]
+     or 1)
+    ~0,
    2,
    k,
    d[-k]
@@ -369,7 +375,7 @@ end
     end
   end
   local ordList = {}
-  for k = 0, 3 do
+  for k = 0, 4 do
     for i = 0, peek(ORDLEN_ADDR) - 1 do
       local pat = peek(ORDLIST_ADDR + k * 16 + i)
       if pat == 255 then
@@ -385,7 +391,7 @@ end
   end
   local slides = {}
   for k = 0, 3 do
-    table.insert(octaves, peek(SLIDE_ADDR + k * 8))
+    table.insert(slides, peek(SLIDE_ADDR + k * 8))
   end
   local notespeeds = { peek(NOTEDUR_ADDR), peek(NOTEDUR_ADDR + 8), peek(NOTEDUR_ADDR + 16), peek(NOTEDUR_ADDR + 24) }
   data, inds = superArray(notespeeds, ordList, patList, octaves, slides)
@@ -404,10 +410,11 @@ end
     envSteps = (16 - peek(TEMPO_ADDR)),
     ordLen = peek(ORDLEN_ADDR),
     ordInd = inds[2],
-    songTicks = ptic() * peek(ORDLEN_ADDR),
-    songPitch = peek(SONGST_ADDR) - 1,
+    songTicks = ptic() * peek(ORDLEN_ADDR) - 1,
+    songPitch = peek(SONGST_ADDR) - 2,
     octInd = inds[4],
     slideInd = inds[5],
+    keyEnvDur = peek(KEYDUR_ADDR) * (16 - peek(TEMPO_ADDR)),
   })
   trace("\n" .. code)
   exit()
@@ -434,7 +441,7 @@ function overlap(a1, a2)
     if max < w and compare(a1, a2, l, s, w) then
       max = w
       t1 = s
-      t2 = i + s - 1
+      t2 = l
     end
   end
   ret = {}
