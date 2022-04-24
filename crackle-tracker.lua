@@ -18,6 +18,7 @@ SLIDE_ADDR = 0x1401A
 ORDLIST_ADDR = 0x14054
 PATS_ADDR = 0x140A4
 KEY_ADDR = 0x14008
+KEYDUR_ADDR = 0x14009
 
 ords = {}
 pats = {}
@@ -34,14 +35,15 @@ ilab = {
 imin = { 0, 0, 0, 1, 0, 0, 0 }
 imax = { 3, 7, 11, 16, 7, 1, 16 }
 song = {}
-smin = { 1, 0, 1, 0, 0 }
-smax = { 16, 16, 16, 7, 11 }
+smin = { 1, 0, 1, 0, 0, 1 }
+smax = { 16, 16, 16, 7, 11, 16 }
 slab = {
   "OrdLen",
   "PatReps",
   "PatLen",
   "Tempo",
-  "Semitn"
+  "Semitn",
+  "KeyDur"
 }
 savebtn = {}
 expbtn = {}
@@ -80,14 +82,14 @@ function TIC()
   iconbtn(savebtn, 3, 0, 30, save, "Save")
   iconbtn(expbtn, 5, 0, 46, export, "Export")
 
-  iconbtn(rewindbtn, 48, 29, 77, rewind, "Play from start", 1)
-  iconbtn(playbtn, 49, 37, 77, play, "Play (space)", 1)
-  iconbtn(stopbtn, 50, 45, 77, stop, "Stop (space)", 1)
-  rect(10, 85, 41, 1, 1)
+  iconbtn(rewindbtn, 48, 29, 69, rewind, "Play from start", 1)
+  iconbtn(playbtn, 49, 37, 69, play, "Play (space)", 1)
+  iconbtn(stopbtn, 50, 45, 69, stop, "Stop (space)", 1)
+  rect(10, 77, 41, 1, 1)
 
-  print("Song", 10, 78, 15, 1, 1, 5)
-  label(slab, 21, 88, 24, 2)
-  editor(song, 45, 87, 1, 5, 0, 1, smin, smax)
+  print("Song", 10, 70, 15, 1, 1, 5)
+  label(slab, 21, 80, 24, 2)
+  editor(song, 45, 79, 1, 6, 0, 1, smin, smax)
 
   print("Instrs", 46, 0, 15, 1, 1, 5)
   label(ilab, 21, 16, 24, 2)
@@ -161,7 +163,7 @@ function sound()
   local keypat = peek(ORDLIST_ADDR + 64 + pat)
   local key = 0
   if keypat < 255 then
-    local row = t / 8 // noteticks % peek(PATLEN_ADDR)
+    local row = t / peek(KEYDUR_ADDR) // noteticks % peek(PATLEN_ADDR)
     key = peek(PATS_ADDR + keypat * 16 + row)
     rect(128 + keypat * 7, row * 7 + 15, 7, 7, 6)
   end
@@ -216,6 +218,7 @@ function clear()
   poke(ORDLEN_ADDR, 8)
   poke(PATREP_ADDR, 8)
   poke(PATLEN_ADDR, 8)
+  poke(KEYDUR_ADDR, 8)
 end
 
 function new()
