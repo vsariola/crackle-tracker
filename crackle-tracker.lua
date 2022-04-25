@@ -312,31 +312,43 @@ function export()
   local tmpl =
   [[
 -- exported from crackle tracker
-d = {
+d={
 ${data}
 }
 
-t = 0
+t=0
 
 function TIC()
  for k=0,3 do
-  p=t//${partLen}${waveSetCode}
-  e=t*d[k+${noteDurInd}]//8
-  n=d[${patLen}*d[${ordLen}*k+p+${ordInd}]+
-   ${patInd}+e//${envSteps}%${patLen}] or 0
+  p=t//${partLen} -- orderlist pos${waveSetCode}
+  e=t*d[k+${noteDurInd}]//8 -- envelope pos
+  -- n is note (semitones), 0=no note
+  n=d[
+      ${patLen}*d[${ordLen}*k+p+${ordInd}]+${patInd} -- patstart
+      +e//${envSteps}%${patLen} -- patrow
+     ] or 0 -- can sometimes be removed
+  -- save envelopes for syncs
+  -- d[0] = chn 0, d[-1] = chn 1...
+  -- % ensures if n=0|pat=0 then env=0
   d[-k]=-e%${envSteps}%(16*n*d[${ordLen}*k+p+${ordInd}]+1)
   sfx(
-   k,
-   ${songPitch}+12*d[k+${octInd}]+n
-    -e%${envSteps}*d[k+${slideInd}]
-    +(0<d[${ordLen}*4+p+${ordInd}]
-     and d[${patLen}*d[${ordLen}*4+p+${ordInd}]
-      +${patInd}+t//${keyEnvDur}%${patLen}]
-     or 1)
-    ~0,
+   k, -- channel k uses wave k
+   ${songPitch} -- global pitch:
+    +12*d[k+${octInd}] -- octave
+    +n -- note
+    -e%${envSteps}*d[k+${slideInd}] -- pitch drop
+    +(
+      0<d[${ordLen}*4+p+${ordInd}] -- key active?
+      and d[
+            ${patLen}*d[${ordLen}*4+p+${ordInd}] -- key pat
+            +${patInd}+t//${keyEnvDur}%${patLen} -- key row
+           ]
+      or 1
+     ) -- key change
+    ~0, -- convert to int
    2,
    k,
-   d[-k]
+   d[-k] -- stored envelope
   )
  end
  t=t+1,t<${songTicks} or exit()
@@ -351,7 +363,7 @@ end
   else
     for k = 0, 3 do
       if waves[k + 1] > 0 then
-        waveSetCode = waveSetCode .. "\n  poke(" .. (65764 + k * 66) .. "," .. waves[k + 1] * 16 .. ")"
+        waveSetCode = waveSetCode .. string.format("\n  poke(%d,%d) -- set chn %d wave", 65764 + k * 66, waves[k + 1] * 16, k)
       end
     end
   end
@@ -397,7 +409,7 @@ end
   data, inds = superArray(notespeeds, ordList, patList, octaves, slides)
   local dataStr = " "
   for index, value in ipairs(data) do
-    dataStr = dataStr .. value .. ", "
+    dataStr = dataStr .. string.format("%2d", value) .. ","
     if index % 10 == 0 then dataStr = dataStr .. "\n " end
   end
   local code = interp(tmpl, {
