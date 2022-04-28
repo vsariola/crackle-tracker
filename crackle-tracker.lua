@@ -235,9 +235,9 @@ function new()
       10,
       "Yes",
       function()
-        clear()
-        dialog = nil
-      end
+      clear()
+      dialog = nil
+    end
     )
     button(
       nobtn,
@@ -247,8 +247,8 @@ function new()
       10,
       "No",
       function()
-        dialog = nil
-      end
+      dialog = nil
+    end
     )
   end
 end
@@ -291,8 +291,8 @@ function interp(s, tab)
   return (s:gsub(
     "($%b{})",
     function(w)
-      return tab[w:sub(3, -2)] or w
-    end
+    return tab[w:sub(3, -2)] or w
+  end
   ))
 end
 
@@ -325,7 +325,7 @@ function TIC()
   -- n is note (semitones), 0=no note
   n=d[
       ${patLen}*d[${ordLen}*k+p+${ordInd}]+${patInd} -- patstart
-      +e//${envSteps}%${patLen} -- patrow
+      +e//${envSteps}%${patLen} -- patrow${fillCode}
      ] or 0 -- can sometimes be removed
   -- save envelopes for syncs
   -- d[0] = chn 0, d[-1] = chn 1...
@@ -367,11 +367,31 @@ end
       end
     end
   end
+  local fills = { peek(FILL_ADDR), peek(FILL_ADDR + 8), peek(FILL_ADDR + 16), peek(FILL_ADDR + 24) }
+  local fillCode = ""
+  if constant(fills) then
+    if fills[1] > 0 then
+      local filldiv = ((peek(PATREP_ADDR) - fills[1]) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
+      fillCode = string.format("\n      +t%%%d//%d*%d", ptic(), filldiv, peek(PATLEN_ADDR))
+    end
+    fills = {}
+  else
+    -- todo
+  end
   local patUsed = {}
   for k = 0, 4 do
+    localfillpats = 0
+    if k < 4 then
+      local filldiv = ((peek(PATREP_ADDR) - peek(FILL_ADDR + k * 8)) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
+      fillpats = (ptic() - 1) // filldiv
+    end
     for i = 0, peek(ORDLEN_ADDR) - 1 do
       local p = peek(ORDLIST_ADDR + k * 16 + i)
-      if p ~= 255 then patUsed[p] = true end
+      if p ~= 255 then
+        for j = 0, fillpats do
+          patUsed[p + j] = true
+        end
+      end
     end
   end
   local patList = {}
@@ -406,7 +426,7 @@ end
     table.insert(slides, peek(SLIDE_ADDR + k * 8))
   end
   local notespeeds = { peek(NOTEDUR_ADDR), peek(NOTEDUR_ADDR + 8), peek(NOTEDUR_ADDR + 16), peek(NOTEDUR_ADDR + 24) }
-  data, inds = superArray(notespeeds, ordList, patList, octaves, slides)
+  data, inds = superArray(notespeeds, ordList, patList, octaves, slides, fills)
   local dataStr = " "
   for index, value in ipairs(data) do
     dataStr = dataStr .. string.format("%2d", value) .. ","
@@ -427,6 +447,7 @@ end
     octInd = inds[4],
     slideInd = inds[5],
     keyEnvDur = peek(KEYDUR_ADDR) * (16 - peek(TEMPO_ADDR)),
+    fillCode = fillCode,
   })
   trace("\n" .. code)
   exit()
