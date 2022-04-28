@@ -10,7 +10,7 @@ Introduction
 The tracker supports 4 channels. Instrument settings are per channel.
 The sound is controlled by the values in the "Instrs" table.
 
-Each channel has its orderlist which tells the general structure of the
+Each channel has its order list which tells the general structure of the
 song: which patterns appear in which order.
 
 The patterns are edited by semitone values, in base 36 (0-9A-Z). "-"
@@ -32,7 +32,7 @@ channels.
 
 There is one extra channel, the "key" channel. This channels values are
 added to the pitch of all channels, to change the key of the song. If
-your notes are from the power chords (0, 7, 12 = C...), you can add
+your notes are from the power chords (0, 7, C (12)...), you can add
 almost any value here. If your patterns have notes only from minor
 chords or major chords, values 0-5-7 (I-IV-V or i-iv-v, respectively)
 stay in key. If you're fine with jazz, anything works.
