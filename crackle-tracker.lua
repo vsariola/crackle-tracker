@@ -3,22 +3,26 @@
 -- desc:   a tracker for tiny intros
 -- script: lua
 -- saveid: crackle
+
+-- song memory map
+ORDLEN_ADDR = 0x14004
+PATREPS_ADDR = 0x14005
+PATLEN_ADDR = 0x14006
 TEMPO_ADDR = 0x14007
 SONGST_ADDR = 0x14008
-ORDLEN_ADDR = 0x14004
-PATREP_ADDR = 0x14005
-PATLEN_ADDR = 0x14006
+KEYDUR_ADDR = 0x14009
+-- intrument 0 memory map, instr 1 at +8 addresses
 WAVE_ADDR = 0x14014
 OCTAVE_ADDR = 0x14015
 SEMITN_ADDR = 0x14016
 NOTEDUR_ADDR = 0x14017
-MUTE_ADDR = 0x14019
 FILL_ADDR = 0x14018
+MUTE_ADDR = 0x14019
 SLIDE_ADDR = 0x1401A
-ORDLIST_ADDR = 0x14054
+-- chn 0 orderlist start address, chn 1 starts at +16
+ORDER_ADDR = 0x14054
+-- pattern 0 start address, pattern 1 starts at +16
 PATS_ADDR = 0x140A4
-KEY_ADDR = 0x14008
-KEYDUR_ADDR = 0x14009
 
 ords = {}
 pats = {}
@@ -149,7 +153,7 @@ function stop()
 end
 
 function ptic()
-  return peek(PATREP_ADDR) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR)
+  return peek(PATREPS_ADDR) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR)
 end
 
 function sound()
@@ -160,7 +164,7 @@ function sound()
   for i = 0, 4 do
     rect(83 + i * 7, pat * 7 + 15, 7, 7, 2 + i)
   end
-  local keypat = peek(ORDLIST_ADDR + 64 + pat)
+  local keypat = peek(ORDER_ADDR + 64 + pat)
   local key = 0
   if keypat < 255 then
     local row = t / peek(KEYDUR_ADDR) // noteticks % peek(PATLEN_ADDR)
@@ -176,9 +180,9 @@ function sound()
     local wave = peek(WAVE_ADDR + i * 8)
     local notepos = t * peek(NOTEDUR_ADDR + i * 8) / 8
     local row = notepos // noteticks % peek(PATLEN_ADDR)
-    local col = peek(ORDLIST_ADDR + i * 16 + pat)
+    local col = peek(ORDER_ADDR + i * 16 + pat)
     if col < 255 then
-      local filldiv = ((peek(PATREP_ADDR) - peek(FILL_ADDR + i * 8)) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
+      local filldiv = ((peek(PATREPS_ADDR) - peek(FILL_ADDR + i * 8)) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
       if filldiv > 0 then col = col + t % ptic // filldiv end
       local note = peek(PATS_ADDR + col * 16 + row)
       local env = -notepos % noteticks
@@ -189,7 +193,7 @@ function sound()
       local st = peek(SEMITN_ADDR + i * 8)
       rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
       note = note - peek(SLIDE_ADDR + i * 8) * (notepos % noteticks) + key
-      sfx(wave, oct * 12 + st + note + peek(KEY_ADDR) ~ 0, 3, i, env)
+      sfx(wave, oct * 12 + st + note + peek(SONGST_ADDR) ~ 0, 3, i, env)
     end
     ::continue::
   end
@@ -208,15 +212,15 @@ end
 function clear()
   memset(0x14004, 0, 1024)
   memset(PATS_ADDR, 255, 16 * 16)
-  memset(ORDLIST_ADDR, 255, 5 * 16)
-  poke(ORDLIST_ADDR, 0)
+  memset(ORDER_ADDR, 255, 5 * 16)
+  poke(ORDER_ADDR, 0)
   poke(PATS_ADDR, 0)
 
   for i = 0, 3 do
     poke(NOTEDUR_ADDR + i * 8, 8)
   end
   poke(ORDLEN_ADDR, 8)
-  poke(PATREP_ADDR, 8)
+  poke(PATREPS_ADDR, 8)
   poke(PATLEN_ADDR, 8)
   poke(KEYDUR_ADDR, 8)
 end
@@ -371,7 +375,7 @@ end
   local fillCode = ""
   if constant(fills) then
     if fills[1] > 0 then
-      local filldiv = ((peek(PATREP_ADDR) - fills[1]) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
+      local filldiv = ((peek(PATREPS_ADDR) - fills[1]) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
       fillCode = string.format("\n      +t%%%d//%d*%d", ptic(), filldiv, peek(PATLEN_ADDR))
     end
     fills = {}
@@ -382,11 +386,11 @@ end
   for k = 0, 4 do
     localfillpats = 0
     if k < 4 then
-      local filldiv = ((peek(PATREP_ADDR) - peek(FILL_ADDR + k * 8)) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
+      local filldiv = ((peek(PATREPS_ADDR) - peek(FILL_ADDR + k * 8)) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
       fillpats = (ptic() - 1) // filldiv
     end
     for i = 0, peek(ORDLEN_ADDR) - 1 do
-      local p = peek(ORDLIST_ADDR + k * 16 + i)
+      local p = peek(ORDER_ADDR + k * 16 + i)
       if p ~= 255 then
         for j = 0, fillpats do
           patUsed[p + j] = true
@@ -409,7 +413,7 @@ end
   local ordList = {}
   for k = 0, 4 do
     for i = 0, peek(ORDLEN_ADDR) - 1 do
-      local pat = peek(ORDLIST_ADDR + k * 16 + i)
+      local pat = peek(ORDER_ADDR + k * 16 + i)
       if pat == 255 then
         table.insert(ordList, 0)
       else
