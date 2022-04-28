@@ -181,7 +181,7 @@ function sound()
       local filldiv = ((peek(PATREP_ADDR) - peek(FILL_ADDR + i * 8)) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
       if filldiv > 0 then col = col + t % ptic // filldiv end
       local note = peek(PATS_ADDR + col * 16 + row)
-      local env = -notepos % noteticks - 1
+      local env = -notepos % noteticks
       if note == 255 then
         env = 0
       end
