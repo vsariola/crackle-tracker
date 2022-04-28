@@ -7,9 +7,8 @@ category.
 Introduction
 ------------
 
-The tracker supports 4 channels. Instrument settings are per channel, so
-each channel is has its distinct tone. The sound is controlled by the
-values in the "Instrs" table.
+The tracker supports 4 channels. Instrument settings are per channel.
+The sound is controlled by the values in the "Instrs" table.
 
 Each channel has its orderlist which tells the general structure of the
 song: which patterns appear in which order.
@@ -25,8 +24,8 @@ the same, so the pattern row advances at different rates for each
 channel, controlled by the NoteDur parameter. For example, even if all
 channels are playing the exact same pattern, if one channel is playing
 whole notes, one channel is playing half notes and one channel quarter
-notes, the whole phrase loops only with the channel that was playing
-whole notes.
+notes, the phrase loops when the channel that was playing whole notes
+loops.
 
 Nevertheless, the order list advances at the same time for all the
 channels.
@@ -35,8 +34,8 @@ There is one extra channel, the "key" channel. This channels values are
 added to the pitch of all channels, to change the key of the song. If
 your notes are from the power chords (0, 7, 12 = C...), you can add
 almost any value here. If your patterns have notes only from minor
-chords or major chords, 0-5-7 (I-IV-V or i-iv-v, respectively) stay in
-key. If you're fine with jazz, anything works.
+chords or major chords, values 0-5-7 (I-IV-V or i-iv-v, respectively)
+stay in key. If you're fine with jazz, anything works.
 
 The song data is kept in the pmem, so you can quit and restart the
 tracker and the song should stay in memory.
@@ -45,32 +44,31 @@ Instrument settings
 -------------------
 
 - Wave: 0 = square, 1 = triangle, 2 = saw, 3 = noise. Triangle and saw
-  sound really bad, so square and noise the only really usable one.
-- Octave: 12*octave is added to the notevalue
-- Semitn: semitn is added to the notevalue
+  sound really bad, so only square and noise are really useful.
+- Octave: 12*octave is added to the note number (in semitones)
+- Semitn: Semitn is added to the note number (in semitones)
 - NoteDur: Controls how fast the pattern row advances or the duration of
   each note. 1 = whole note, 2 = half note, 4 = quarter note, 8 = eight
   note, G (16) = sixteenth note
-- Fill: Controls following pattern(s) are played instead of repeating
-  the same pattern every time.
-- Mute: temporarily mute channel
+- Fill: Controls if following pattern(s) are played instead of repeating
+  the same pattern every time. To be documented how it actually works...
+- Mute: Temporarily mute channel.
 - Slide: How quickly the pitch of the channel drops. 0 = no drop, 8 =
-  typical for a kick
+  typical for a kick.
 
 
 Song settings
 -------------
 
-- Ordlen: length of the order list.
-- PatReps: how long to keep on repeating the patterns before advancing
-  to next pattern.
-- PatLen: what is the length of each pattern, in rows.
-- Tempo: controls the tempo of the song. Actually, the envelope of each
+- Ordlen: Length of the order list.
+- PatReps: How slowly the order list is advanced.
+- PatLen: What is the length of each pattern, in rows.
+- Tempo: Controls the tempo of the song. Actually, the envelope of each
   note it calculated with `%(16-tempo)`, so increasing the tempo also
   decreases the master volume.
-- Semitn: added to all note values of the song, controlling essentially
+- Semitn: Added to all note values of the song, controlling essentially
   the key of the song.
-- KeyDur: how quickly the pattern rows of the key channel advance.
+- KeyDur: How quickly the pattern rows of the key channel advance.
 
 
 Exporting
@@ -92,9 +90,9 @@ Saving & Loading
 ----------------
 
 Saving works like exporting: when you save the song, the tracker prints
-a code that, when ran, loads the song to the pmem. For example, if you
-copy-pasted the code to a file called `saved-song.lua`, in order to load
-the song:
+a code to the console. When the code is ran, the song is loaded to the
+pmem. For example, if you copy-pasted the code to a file called
+`saved-song.lua`, in order to load the song:
 
   1. `load saved-song.lua`
   2. `run`
@@ -102,15 +100,17 @@ the song:
   4. `run`
 
 The saving mechanism abuses `-- saveid:` script tag to make multiple
-.lua files access the same pmem.
+.lua files access the same persistent memory.
 
 
 Prods using Crackle Tracker
 ---------------------------
 
-[cracklebass](https://www.pouet.net/prod.php?which=90244) by brainlez Coders! - Song included in the examples folder.
+[cracklebass](https://www.pouet.net/prod.php?which=90244) by brainlez
+Coders! - Song included in the examples folder.
 
-[Pulsating Magic Orb](https://www.pouet.net/prod.php?which=90937) by brainlez Coders! - Song included in the examples folder.
+[Pulsating Magic Orb](https://www.pouet.net/prod.php?which=90937) by
+brainlez Coders! - Song included in the examples folder.
 
 Credits
 -------
