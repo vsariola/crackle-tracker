@@ -24,10 +24,8 @@ ORDER_ADDR = 0x14054
 -- pattern 0 start address, pattern 1 starts at +16
 PATS_ADDR = 0x140A4
 
-ords = {}
-pats = {}
-inst = {}
-ilab = {
+-- labels and maximum & minimum values for editors
+INSTR_LABELS = {
   "Wave",
   "Octave",
   "Semitn",
@@ -36,12 +34,9 @@ ilab = {
   "Mute",
   "Slide"
 }
-imin = { 0, 0, 0, 1, 0, 0, 0 }
-imax = { 3, 7, 11, 16, 7, 1, 16 }
-song = {}
-smin = { 1, 0, 1, 0, 0, 1 }
-smax = { 16, 16, 16, 7, 11, 16 }
-slab = {
+INSTR_MIN = { 0, 0, 0, 1, 0, 0, 0 }
+INSTR_MAX = { 3, 7, 11, 16, 7, 1, 16 }
+SONG_LABELS = {
   "OrdLen",
   "PatReps",
   "PatLen",
@@ -49,14 +44,24 @@ slab = {
   "Semitn",
   "KeyDur"
 }
-savebtn = {}
-expbtn = {}
-newbtn = {}
-rewindbtn = {}
-playbtn = {}
-stopbtn = {}
+SONG_MIN = { 1, 0, 1, 0, 0, 1 }
+SONG_MAX = { 16, 16, 16, 7, 11, 16 }
+
+-- states for the table editors (cursor x,y within the editor etc.)
+orderState = {}
+patsState = {}
+instrState = {}
+songState = {}
+-- states for the buttons
+saveBtn = {}
+expBtn = {}
+newBtn = {}
+rewindBtn = {}
+playBtn = {}
+stopBtn = {}
+
 playing = false
-taborder = { inst, ords, pats, song }
+tabOrder = { instrState, orderState, patsState, songState }
 focus = nil
 dialog = nil
 t = 0
@@ -82,36 +87,36 @@ function TIC()
 
   print("Crackle\nTracker", 0, 0, 15, 1, 1, 1)
   print("v0.1", 225, 131, 15, 1, 1, 1)
-  iconbtn(newbtn, 1, 0, 14, new, "New")
-  iconbtn(savebtn, 3, 0, 30, save, "Save")
-  iconbtn(expbtn, 5, 0, 46, export, "Export")
+  iconbtn(newBtn, 1, 0, 14, new, "New")
+  iconbtn(saveBtn, 3, 0, 30, save, "Save")
+  iconbtn(expBtn, 5, 0, 46, export, "Export")
 
-  iconbtn(rewindbtn, 48, 29, 69, rewind, "Play from start", 1)
-  iconbtn(playbtn, 49, 37, 69, play, "Play (space)", 1)
-  iconbtn(stopbtn, 50, 45, 69, stop, "Stop (space)", 1)
+  iconbtn(rewindBtn, 48, 29, 69, rewind, "Play from start", 1)
+  iconbtn(playBtn, 49, 37, 69, play, "Play (space)", 1)
+  iconbtn(stopBtn, 50, 45, 69, stop, "Stop (space)", 1)
   rect(10, 77, 41, 1, 1)
 
   print("Song", 10, 70, 15, 1, 1, 5)
-  label(slab, 21, 80, 24, 2)
-  editor(song, 45, 79, 1, 6, 0, 1, smin, smax)
+  label(SONG_LABELS, 21, 80, 24, 2)
+  editor(songState, 45, 79, 1, 6, 0, 1, SONG_MIN, SONG_MAX)
 
   print("Instrs", 46, 0, 15, 1, 1, 5)
-  label(ilab, 21, 16, 24, 2)
-  editor(inst, 45, 15, 4, 7, 1, 8, imin, imax, true)
+  label(INSTR_LABELS, 21, 16, 24, 2)
+  editor(instrState, 45, 15, 4, 7, 1, 8, INSTR_MIN, INSTR_MAX, true)
   hextitle(46, 8, 4)
 
   print("Order", 84, 0, 15, 1, 1, 1)
-  editor(ords, 83, 15, 5, peek(ORDLEN_ADDR), 5, 16, -1, 15, true)
+  editor(orderState, 83, 15, 5, peek(ORDLEN_ADDR), 5, 16, -1, 15, true)
   spr(0, 112, 7, 0)
   hextitle(84, 8, 4)
 
   print("Patterns", 129, 0, 15, 1, 1, 1)
-  editor(pats, 128, 15, 16, peek(PATLEN_ADDR), 10, 16, -1, 35, true)
+  editor(patsState, 128, 15, 16, peek(PATLEN_ADDR), 10, 16, -1, 35, true)
   hextitle(129, 8, 16)
 
   if keyp(49) then
     found = 0
-    for i, v in ipairs(taborder) do
+    for i, v in ipairs(tabOrder) do
       if v == focus then
         found = i
         break
@@ -121,7 +126,7 @@ function TIC()
       if key(64) then
         found = found - 2
       end
-      focus = taborder[found % #taborder + 1]
+      focus = tabOrder[found % #tabOrder + 1]
     end
   end
   if keyp(48) then
@@ -143,8 +148,8 @@ end
 
 function play()
   playing = true
-  if focus == ords then
-    t = ords.y * ptic()
+  if focus == orderState then
+    t = orderState.y * ptic()
   end
 end
 
