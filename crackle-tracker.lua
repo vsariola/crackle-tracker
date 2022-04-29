@@ -64,6 +64,7 @@ playing = false
 tabOrder = { instrState, orderState, patsState, songState }
 focus = nil
 dialog = nil
+tooltip = {}
 t = 0
 
 function TIC()
@@ -111,6 +112,10 @@ function TIC()
   print("Patterns", 129, 0, 15, 1, 1, 1)
   editor(patsState, 128, 15, 16, peek(PATLEN_ADDR), 10, 16, -1, 35, true)
   hextitle(129, 8, 16)
+
+  if tooltip.src then
+    label(tooltip.txt, tooltip.x, tooltip.y, nil, 2, 0, 13)
+  end
 
   -- if Tab pressed
   if keyp(49) then
@@ -573,20 +578,20 @@ function iconbtn(s, i, x, y, cb, tip, w)
     end
     s.t = (s.t or 0) + 1
     if s.t == 40 then
-      s.x, s.y = mx, my + 5
+      tooltip.src = s
+      tooltip.txt = tip
+      tooltip.x = mx
+      tooltip.y = my + 5
     end
   else
     s.t = 0
+    if tooltip.src == s then
+      tooltip.src = nil
+    end
   end
   spr(i, x, y, 1, 1, 0, 0, w, w)
   for i = 0, 15 do
     poke4(0x3FF0 * 2 + i, i)
-  end
-  if tip and s.t >= 40 then
-    label(tip, s.x, s.y, nil, 2, 0, 13)
-    -- local w = print(tip,1e3,0)
-    -- rect(s.x,s.y,w+2,8,13)
-    -- print(tip,s.x+1,s.y+1,0)
   end
   s.l = l
 end
