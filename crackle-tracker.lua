@@ -112,21 +112,16 @@ function TIC()
   editor(patsState, 128, 15, 16, peek(PATLEN_ADDR), 10, 16, -1, 35, true)
   hextitle(129, 8, 16)
 
+  -- if Tab pressed
   if keyp(49) then
-    found = 0
-    for i, v in ipairs(tabOrder) do
-      if v == focus then
-        found = i
-        break
-      end
+    found = find(tabOrder, focus) or 0
+    -- Shift+Tab cycles backwards
+    if key(64) then
+      found = found - 2
     end
-    if found ~= nil then
-      if key(64) then
-        found = found - 2
-      end
-      focus = tabOrder[found % #tabOrder + 1]
-    end
+    focus = tabOrder[found % #tabOrder + 1]
   end
+  -- if Space pressed
   if keyp(48) then
     if playing then
       stop()
@@ -300,6 +295,15 @@ function interp(s, tab)
     return tab[w:sub(3, -2)] or w
   end
   ))
+end
+
+function find(arr, value)
+  for i, v in ipairs(arr) do
+    if v == value then
+      return i, v
+    end
+  end
+  return nil, nil
 end
 
 function constant(arr)
