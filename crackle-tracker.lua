@@ -69,8 +69,7 @@ t = 0
 function TIC()
   cls()
   if dialog ~= nil then
-    dialog()
-    return
+    return dialog()
   end
 
   if playing then
@@ -246,10 +245,7 @@ function new()
       40,
       10,
       "Yes",
-      function()
-      clear()
-      dialog = nil
-    end
+      function() clear() dialog = nil end
     )
     button(
       nobtn,
@@ -258,9 +254,7 @@ function new()
       40,
       10,
       "No",
-      function()
-      dialog = nil
-    end
+      function() dialog = nil end
     )
   end
 end
