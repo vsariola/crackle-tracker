@@ -387,11 +387,11 @@ end
   if constant(fills) then
     if fills[1] > 0 then
       local filldiv = ((peek(PATREPS_ADDR) - fills[1]) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
-      fillCode = string.format("\n      +t%%%d//%d*%d", ptic(), filldiv, peek(PATLEN_ADDR))
+      fillCode = string.format("\n      +t%%%d//%d*%d --fills", ptic(), filldiv, peek(PATLEN_ADDR))
     end
     fills = {}
   else
-    -- todo
+    fillCode = string.format("\n      +t%%%d//%d//(%d-d[k+${fillInd}])*%d --fills", ptic(), (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR), peek(PATREPS_ADDR), peek(PATLEN_ADDR))
   end
   local patUsed = {}
   for k = 0, 4 do
@@ -462,7 +462,7 @@ end
     octInd = inds[4],
     slideInd = inds[5],
     keyEnvDur = peek(KEYDUR_ADDR) * (16 - peek(TEMPO_ADDR)),
-    fillCode = fillCode,
+    fillCode = interp(fillCode, { fillInd = inds[6] }),
   })
   trace("\n" .. code)
   exit()
