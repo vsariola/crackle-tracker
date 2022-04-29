@@ -77,11 +77,11 @@ function TIC()
     sound()
   end
 
-  local dur = peek(ORDLEN_ADDR) * ptic() / 60
-  local dur_min = math.floor(dur / 60)
-  local dur_s = math.floor(dur - dur_min * 60)
-  local dur_str = (dur_min > 0 and (dur_min .. "min ") or "") .. dur_s .. "s"
-  print("Song duration: " .. dur_str, 0, 130, 15, 1, 1, 1)
+  local durSec = songTicks() / 60
+  local durMin = math.floor(durSec / 60)
+  durSec = math.floor(durSec - durMin * 60)
+  local durStr = (durMin > 0 and (durMin .. "min ") or "") .. durSec .. "s"
+  print("Song duration: " .. durStr, 0, 130, 15, 1, 1, 1)
   print("BPM: " .. math.floor(bpm() + .5), 130, 130, 15, 1, 1, 1)
 
   print("Crackle\nTracker", 0, 0, 15, 1, 1, 1)
@@ -147,7 +147,7 @@ end
 function play()
   playing = true
   if focus == orderState then
-    t = orderState.y * ptic()
+    t = orderState.y * patTicks()
   end
 end
 
@@ -155,7 +155,11 @@ function stop()
   playing = false
 end
 
-function ptic()
+function songTicks()
+  return peek(ORDLEN_ADDR) * patTicks()
+end
+
+function patTicks()
   return peek(PATREPS_ADDR) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR)
 end
 
@@ -164,7 +168,7 @@ function bpm()
 end
 
 function sound()
-  local ptic = ptic()
+  local ptic = patTicks()
   local stic = ptic * peek(ORDLEN_ADDR)
   local noteticks = (16 - peek(TEMPO_ADDR))
   pat = t // ptic
@@ -387,18 +391,18 @@ end
   if constant(fills) then
     if fills[1] > 0 then
       local filldiv = ((peek(PATREPS_ADDR) - fills[1]) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
-      fillCode = string.format("\n      +t%%%d//%d*%d --fills", ptic(), filldiv, peek(PATLEN_ADDR))
+      fillCode = string.format("\n      +t%%%d//%d*%d --fills", patTicks(), filldiv, peek(PATLEN_ADDR))
     end
     fills = {}
   else
-    fillCode = string.format("\n      +t%%%d//%d//(%d-d[k+${fillInd}])*%d --fills", ptic(), (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR), peek(PATREPS_ADDR), peek(PATLEN_ADDR))
+    fillCode = string.format("\n      +t%%%d//%d//(%d-d[k+${fillInd}])*%d --fills", patTicks(), (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR), peek(PATREPS_ADDR), peek(PATLEN_ADDR))
   end
   local patUsed = {}
   for k = 0, 4 do
     localfillpats = 0
     if k < 4 then
       local filldiv = ((peek(PATREPS_ADDR) - peek(FILL_ADDR + k * 8)) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR))
-      fillpats = (ptic() - 1) // filldiv
+      fillpats = (patTicks() - 1) // filldiv
     end
     for i = 0, peek(ORDLEN_ADDR) - 1 do
       local p = peek(ORDER_ADDR + k * 16 + i)
@@ -448,7 +452,7 @@ end
     if index % 10 == 0 then dataStr = dataStr .. "\n " end
   end
   local code = interp(tmpl, {
-    partLen = ptic(),
+    partLen = patTicks(),
     waveSetCode = waveSetCode,
     data = dataStr,
     noteDurInd = inds[1],
@@ -457,7 +461,7 @@ end
     envSteps = (16 - peek(TEMPO_ADDR)),
     ordLen = peek(ORDLEN_ADDR),
     ordInd = inds[2],
-    songTicks = ptic() * peek(ORDLEN_ADDR) - 1,
+    songTicks = patTicks() * peek(ORDLEN_ADDR) - 1,
     songPitch = peek(SONGST_ADDR) - 2,
     octInd = inds[4],
     slideInd = inds[5],
