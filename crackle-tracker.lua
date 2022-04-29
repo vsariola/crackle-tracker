@@ -82,8 +82,7 @@ function TIC()
   local dur_s = math.floor(dur - dur_min * 60)
   local dur_str = (dur_min > 0 and (dur_min .. "min ") or "") .. dur_s .. "s"
   print("Song duration: " .. dur_str, 0, 130, 15, 1, 1, 1)
-  bpm = 30 * 60 / (16 - peek(TEMPO_ADDR))
-  print("BPM: " .. math.floor(bpm + .5), 130, 130, 15, 1, 1, 1)
+  print("BPM: " .. math.floor(bpm() + .5), 130, 130, 15, 1, 1, 1)
 
   print("Crackle\nTracker", 0, 0, 15, 1, 1, 1)
   print("v0.1", 225, 131, 15, 1, 1, 1)
@@ -159,6 +158,10 @@ end
 
 function ptic()
   return peek(PATREPS_ADDR) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR)
+end
+
+function bpm()
+  return 30 * 60 / (16 - peek(TEMPO_ADDR))
 end
 
 function sound()
