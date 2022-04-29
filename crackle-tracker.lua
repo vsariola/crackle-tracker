@@ -666,7 +666,6 @@ function editor(s, x, y, w, h, ad, st, mi, ma, hex)
       end
     end
     c = 13
-    rect(x + s.x * 7, y + s.y * 7, 7, 7, 9)
     poke(16320 + 9 * 3, math.sin(time() / 199) ^ 2 * 128)
   else
     c = 14
@@ -675,6 +674,9 @@ function editor(s, x, y, w, h, ad, st, mi, ma, hex)
   s.y = s.y > 0 and s.y or 0
   s.x = s.x < w - 1 and s.x or w - 1
   s.y = s.y < h - 1 and s.y or h - 1
+  if focus == s then
+    rect(x + s.x * 7, y + s.y * 7, 7, 7, 9)
+  end
   mx, my, lb, mb, rb, sx, sy = mouse()
   if lb and mx > x and my > y and mx - x < pw and my - y < ph then
     focus = s
