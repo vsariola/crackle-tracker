@@ -18,7 +18,7 @@ is repeated several times before the order list advances.
 The patterns are edited by semitone values, in base 36 (0-9A-Z). "-"
 denotes no note.
 
-Each note has linearly decaying envelope (no attack, no sustain) and
+Each note has a linearly decaying envelope (no attack, no sustain) and
 this cannot be changed.
 
 Importantly, the note duration of different channels do not have to be
@@ -32,12 +32,17 @@ loops.
 Nevertheless, the order list advances at the same time for all the
 channels.
 
-There is one extra channel, the "key" channel. This channels values are
-added to the pitch of all channels, to change the key of the song. If
-the notes in your patterns are from the power chords (0, 7, C (12)...),
-you can add almost any value here. If your patterns have notes only from
-minor triads or major triads, at least values 0-5-7 (I-IV-V or i-iv-v,
-respectively) stay in key. If you're fine with jazz, anything works.
+There is one extra channel, the "transpose channel". This channels
+values are added to the pitch of all channels, to change the current
+chord of the song. If your patterns only have notes from the power
+chords (0, 7, C (12)...), you can use many different values here and
+still the overall song stays in (some) key. If your patterns have notes
+only from minor triads or major triads, at least values 0-5-7 (I-IV-V or
+i-iv-v, respectively) stay in key. If you're fine with jazz, anything
+works.
+
+NOTE: "-" is actually 255, so the patterns the transpose channel is
+playing should not contain "-"; use 0 instead.
 
 The song data is kept in the persistent memory (pmem), so you can quit
 and restart TIC-80 and the song should stay in memory.
