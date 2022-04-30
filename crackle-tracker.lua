@@ -23,6 +23,7 @@ SLIDE_ADDR = 0x1401A
 ORDER_ADDR = 0x14054
 -- pattern 0 start address, pattern 1 starts at +16
 PATS_ADDR = 0x140A4
+MEMUSED = PATS_ADDR + 16 * 16 - 0x14004 -- total bytes that need to be saved
 
 -- labels and maximum & minimum values for editors
 INSTR_LABELS = {
@@ -249,36 +250,28 @@ function new()
 end
 
 function save()
-  local s = "\n-- saveid: crackle\n"
-  s = s .. "d=\n"
-  for i = 0, 31 do
-    s = s .. '"'
-    for j = 0, 15 do
-      local v = peek(0x14004 + i * 16 + j)
-      s = s .. string.char(v % 16 + 35) .. string.char(v // 16 + 35)
-    end
-    s = s .. '"'
-    if i < 31 then
-      s = s .. ".."
-    end
-    s = s .. "\n"
-  end
-  s = s ..
-      [[
-for i=0,511 do
- v=string.byte(
-  string.sub(d,i*2+1,i*2+1)
- )-35+(string.byte(
-  string.sub(d,i*2+2,i*2+2)
- )-35)*16
+  local tmpl = [=[
+
+-- saveid: crackle
+d=[[
+${dataStr}]]
+d=d:gsub("%s+","")
+for i=0,${memUsedMinus1} do
+ v=tonumber(d:sub(i*2+1,i*2+2),16)
  poke(0x14004+i,v)
 end
 function TIC()
  cls()
  print("Song loaded :)",9,9,time())
 end
-]]
-  trace(s)
+]=]
+  local dataStr = ""
+  for i = 0, MEMUSED - 1 do
+    local v = peek(0x14004 + i)
+    dataStr = dataStr .. string.format("%02X", v)
+    if (i + 1) % 16 == 0 then dataStr = dataStr .. "\n" end
+  end
+  trace(interp(tmpl, { dataStr = dataStr, memUsedMinus1 = MEMUSED - 1 }))
   exit()
 end
 
@@ -585,17 +578,21 @@ function iconbtn(s, i, x, y, cb, tip, w)
 end
 
 function button(s, x, y, w, h, t, cb)
-  rect(x, y, w, h, 13)
-  rect(x + 1, y + 1, w - 1, h - 1, 0)
-  rect(x + 1, y + 1, w - 2, h - 2, 14)
+  local mx, my, l = mouse()
+  local highlight = 0
+  if mx >= x and my >= y and mx < x + w and my < y + h then
+    if not s.l and l and cb then
+      cb()
+    end
+    highlight = -1
+  end
+  rect(x, y, w, h, 13 + highlight)
+  rect(x + 1, y + 1, w - 1, h - 1, highlight)
+  rect(x + 1, y + 1, w - 2, h - 2, 14 + highlight)
   local m = print(t, 0, -99)
   local a = x + (w - m) / 2
   print(t, a + 1, y + 2 + 1, 0)
   print(t, a, y + 2, 12)
-  mx, my, l = mouse()
-  if mx >= x and my >= y and mx < x + w and my < y + h and not s.l and l then
-    cb()
-  end
   s.l = l
 end
 
