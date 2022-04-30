@@ -226,7 +226,6 @@ function clear()
   memset(ORDER_ADDR, 255, 5 * 16)
   poke(ORDER_ADDR, 0)
   poke(PATS_ADDR, 0)
-
   for i = 0, 3 do
     poke(NOTEDUR_ADDR + i * 8, 8)
   end
@@ -237,29 +236,15 @@ function clear()
 end
 
 function new()
-  yesbtn = {}
-  nobtn = {}
+  local yesbtn = {}
+  local nobtn = {}
   dialog = function()
     rect(20, 20, 200, 96, 15)
     label("Warning: Clear song data?", 20, 50, 200, 1, 12)
-    button(
-      yesbtn,
-      70,
-      80,
-      40,
-      10,
-      "Yes",
-      function() clear() dialog = nil end
-    )
-    button(
-      nobtn,
-      130,
-      80,
-      40,
-      10,
-      "No",
-      function() dialog = nil end
-    )
+    button(yesbtn, 70, 80, 40, 10, "Yes",
+      function() clear() dialog = nil end)
+    button(nobtn, 130, 80, 40, 10, "No",
+      function() dialog = nil end)
   end
 end
 
@@ -328,8 +313,7 @@ function constant(arr)
 end
 
 function export()
-  local tmpl =
-  [[
+  local tmpl = [[
 -- exported from crackle tracker
 d={
 ${data}
