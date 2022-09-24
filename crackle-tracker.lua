@@ -331,6 +331,7 @@ function TIC()
    k, -- channel k uses wave k
    ${songPitch} -- global pitch:
     +12*d[k+${octInd}] -- octave
+    +d[k+${stInd}] -- semitones
     +n -- note
     -e%${envSteps}*d[k+${slideInd}] -- pitch drop
     +(
@@ -417,12 +418,16 @@ end
   for k = 0, 3 do
     table.insert(octaves, peek(OCTAVE_ADDR + k * 8))
   end
+  local semitones = {}
+  for k = 0, 3 do
+    table.insert(semitones, peek(SEMITN_ADDR + k * 8))
+  end
   local slides = {}
   for k = 0, 3 do
     table.insert(slides, peek(SLIDE_ADDR + k * 8))
   end
   local notespeeds = { peek(NOTEDUR_ADDR), peek(NOTEDUR_ADDR + 8), peek(NOTEDUR_ADDR + 16), peek(NOTEDUR_ADDR + 24) }
-  data, inds = superArray(notespeeds, ordList, patList, octaves, slides, fills)
+  data, inds = superArray(notespeeds, ordList, patList, octaves, slides, fills, semitones)
   local dataStr = " "
   for index, value in ipairs(data) do
     dataStr = dataStr .. string.format("%2d", value) .. ","
@@ -441,6 +446,7 @@ end
     songTicks = patTicks() * peek(ORDLEN_ADDR) - 1,
     songPitch = peek(SONGST_ADDR) - 2,
     octInd = inds[4],
+    stInd = inds[7],
     slideInd = inds[5],
     keyEnvDur = peek(KEYDUR_ADDR) * (16 - peek(TEMPO_ADDR)),
     fillCode = interp(fillCode, { fillInd = inds[6] }),
