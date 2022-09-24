@@ -190,7 +190,7 @@ function sound()
       goto continue
     end
     local wave = peek(WAVE_ADDR + i * 8)
-    local notepos = t * peek(NOTEDUR_ADDR + i * 8) / 8
+    local notepos = t * peek(NOTEDUR_ADDR + i * 8) // 8
     local row = notepos // noteticks % peek(PATLEN_ADDR)
     local col = peek(ORDER_ADDR + i * 16 + pat)
     if col < 255 then
