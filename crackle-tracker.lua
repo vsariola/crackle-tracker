@@ -279,8 +279,8 @@ function interp(s, tab)
   return (s:gsub(
     "($%b{})",
     function(w)
-    return tab[w:sub(3, -2)] or w
-  end
+      return tab[w:sub(3, -2)] or w
+    end
   ))
 end
 
@@ -360,7 +360,8 @@ end
   else
     for k = 0, 3 do
       if waves[k + 1] > 0 then
-        waveSetCode = waveSetCode .. string.format("\n  poke(%d,%d) -- set chn %d wave", 65764 + k * 66, waves[k + 1] * 16, k)
+        waveSetCode = waveSetCode ..
+            string.format("\n  poke(%d,%d) -- set chn %d wave", 65764 + k * 66, waves[k + 1] * 16, k)
       end
     end
   end
@@ -373,7 +374,8 @@ end
     end
     fills = {}
   else
-    fillCode = string.format("\n      +t%%%d//%d//(%d-d[k+${fillInd}])*%d --fills", patTicks(), (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR), peek(PATREPS_ADDR), peek(PATLEN_ADDR))
+    fillCode = string.format("\n      +t%%%d//%d//(%d-d[k+${fillInd}])*%d --fills", patTicks(),
+      (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR), peek(PATREPS_ADDR), peek(PATLEN_ADDR))
   end
   local patUsed = {}
   for k = 0, 4 do
