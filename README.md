@@ -64,6 +64,10 @@ Instrument settings
 - Mute: Temporarily mute channel.
 - Slide: How quickly the pitch of the channel drops. 0 = no drop, 8 =
   typical for a kick.
+- Arpeggio: When using diatonic scale, it arpeggiate with this many
+  thirds on top of the bass note, so 1 = arpeggiate between root and
+  third of the chord, 2 = arpeggiate between root, third and fifth of
+  the chord... etc.
 
 
 Song settings

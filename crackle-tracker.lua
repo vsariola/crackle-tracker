@@ -22,6 +22,7 @@ NOTEDUR_ADDR = 0x14017
 FILL_ADDR = 0x14018
 MUTE_ADDR = 0x14019
 SLIDE_ADDR = 0x1401A
+ARPEGGIO_ADDR = 0x1401B
 -- chn 0 orderlist start address, chn 1 starts at +16
 ORDER_ADDR = 0x14054
 -- pattern 0 start address, pattern 1 starts at +16
@@ -36,10 +37,11 @@ INSTR_LABELS = {
   "NoteDur",
   "Fill",
   "Mute",
-  "Slide"
+  "Slide",
+  "Arpeggio"
 }
-INSTR_MIN = { 0, 0, 0, 1, 0, 0, 0 }
-INSTR_MAX = { 3, 7, 11, 16, 7, 1, 16 }
+INSTR_MIN = { 0, 0, 0, 1, 0, 0, 0, 0 }
+INSTR_MAX = { 3, 7, 11, 16, 7, 1, 16, 8 }
 SONG1_LABELS = {
   "OrdLen",
   "PatReps",
@@ -145,21 +147,21 @@ function TIC()
   iconbtn(saveBtn, 3, 0, 30, save, "Save")
   iconbtn(expBtn, 5, 0, 46, export, "Export")
 
-  iconbtn(rewindBtn, 48, 29, 69, rewind, "Play from start", 1)
-  iconbtn(playBtn, 49, 37, 69, play, "Play (space)", 1)
-  iconbtn(stopBtn, 50, 45, 69, stop, "Stop (space)", 1)
-  rect(0, 77, 79, 1, 1)
+  iconbtn(rewindBtn, 48, 29, 77, rewind, "Play from start", 1)
+  iconbtn(playBtn, 49, 37, 77, play, "Play (space)", 1)
+  iconbtn(stopBtn, 50, 45, 77, stop, "Stop (space)", 1)
+  rect(0, 85, 79, 1, 1)
 
-  print("Song", 10, 70, 15, 1, 1, 5)
-  label(SONG1_LABELS, 4, 80, 24, 2)
-  editor(song1State, 28, 79, 1, 5, 0, 1, SONG1_MIN, SONG1_MAX)
-  label(SONG2_LABELS, 43, 80, 24, 2)
-  editor(song2State, 67, 79, 1, 4, 5, 1, SONG2_MIN, SONG2_MAX)
+  print("Song", 10, 78, 15, 1, 1, 5)
+  label(SONG1_LABELS, 4, 88, 24, 2)
+  editor(song1State, 28, 87, 1, 5, 0, 1, SONG1_MIN, SONG1_MAX)
+  label(SONG2_LABELS, 43, 88, 24, 2)
+  editor(song2State, 67, 87, 1, 4, 5, 1, SONG2_MIN, SONG2_MAX)
 
 
   print("Instrs", 46, 0, 15, 1, 1, 5)
   label(INSTR_LABELS, 21, 16, 24, 2)
-  editor(instrState, 45, 15, 4, 7, 16, 8, INSTR_MIN, INSTR_MAX, true)
+  editor(instrState, 45, 15, 4, 8, 16, 8, INSTR_MIN, INSTR_MAX, true)
   hextitle(46, 8, 4)
 
   print("Order", 84, 0, 15, 1, 1, 1)
@@ -268,6 +270,10 @@ function sound()
       local st = peek(SEMITN_ADDR + i * 8)
       rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
       note = note + st
+      arpeggio = peek(ARPEGGIO_ADDR + i * 8)
+      if arpeggio > 0 then
+        note = note + t % (arpeggio + 1) * 2
+      end
       if peek(INVERSION_ADDR) > 0 then
         note = (note - key // peek(INVERSION_ADDR) * 2) * 7 // 6
       end
@@ -405,6 +411,7 @@ function TIC()
          ]
     or 1
     )-1 -- key change
+  ${arpeggioProcessing}
   ${intervalProcessing}
   ${noteProcessing}
   sfx(
@@ -495,6 +502,17 @@ end
   for k = 0, 3 do
     table.insert(semitones, peek(SEMITN_ADDR + k * 8))
   end
+  local arpeggios = {}
+  for k = 0, 3 do
+    table.insert(arpeggios, peek(ARPEGGIO_ADDR + k * 8) + 1)
+  end
+  local arpeggioProcessing = ""
+  if constant(arpeggios) then
+    if arpeggios[1] > 1 then
+      arpeggioProcessing = string.format("n=n+t%d*2", arpeggios[1])
+    end
+    arpeggios = {}
+  end
   local intervalProcessing = ""
   if constant(semitones) then
     if semitones[1] > 0 then
@@ -507,11 +525,14 @@ end
     table.insert(slides, peek(SLIDE_ADDR + k * 8))
   end
   local notespeeds = { peek(NOTEDUR_ADDR), peek(NOTEDUR_ADDR + 8), peek(NOTEDUR_ADDR + 16), peek(NOTEDUR_ADDR + 24) }
-  data, inds = superArray(notespeeds, ordList, patList, octaves, slides, fills, semitones)
+  data, inds = superArray(notespeeds, ordList, patList, octaves, slides, fills, semitones, arpeggios)
   local dataStr = " "
   for index, value in ipairs(data) do
     dataStr = dataStr .. string.format("%2d", value) .. ","
     if index % 10 == 0 then dataStr = dataStr .. "\n " end
+  end
+  if next(arpeggios) ~= nil then
+    arpeggioProcessing = string.format("n=n+t%%d[%d+k]*2", inds[8])
   end
   if next(semitones) ~= nil then
     intervalProcessing = string.format("n=n+d[%d+k]", inds[7])
@@ -548,6 +569,7 @@ end
     fillCode = interp(fillCode, { fillInd = inds[6] }),
     noteProcessing = noteProcessing,
     intervalProcessing = intervalProcessing,
+    arpeggioProcessing = arpeggioProcessing,
   })
   trace("\n" .. code)
   exit()
