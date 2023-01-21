@@ -125,6 +125,9 @@ Coders! - Song included in the examples folder.
 [Pulsating Magic Orb](https://www.pouet.net/prod.php?which=90937) by
 brainlez Coders! - Song included in the examples folder.
 
+[stroboscope](https://www.pouet.net/prod.php?which=92799) by brainlez
+Coders! - Song included in the examples folder.
+
 Credits
 -------
 
