@@ -397,6 +397,14 @@ function TIC()
   -- d[0] = chn 0, d[-1] = chn 1...
   -- % ensures if n=0|pat=0 then env=0
   d[-k]=-e%${envSteps}%(16*n*d[${ordLen}*k+p+${ordInd}]+1)
+  u = (0<d[${ordLen}*4+p+${ordInd}] -- key active?
+    and d[
+          ${patLen}*d[${ordLen}*4+p+${ordInd}] -- key pat
+          +${patInd}+t//${keyEnvDur}%${patLen} -- key row
+         ]
+    or 1
+    )-1 -- key change
+  ${noteProcessing}
   sfx(
    k, -- channel k uses wave k
    ${songPitch} -- global pitch:
@@ -404,14 +412,6 @@ function TIC()
     +d[k+${stInd}] -- semitones
     +n -- note
     -e%${envSteps}*d[k+${slideInd}] -- pitch drop
-    +(
-      0<d[${ordLen}*4+p+${ordInd}] -- key active?
-      and d[
-            ${patLen}*d[${ordLen}*4+p+${ordInd}] -- key pat
-            +${patInd}+t//${keyEnvDur}%${patLen} -- key row
-           ]
-      or 1
-     ) -- key change
     ~0, -- convert to int
    2,
    k,
@@ -505,6 +505,19 @@ end
     dataStr = dataStr .. string.format("%2d", value) .. ","
     if index % 10 == 0 then dataStr = dataStr .. "\n " end
   end
+  local noteProcessing = nil
+  if peek(INVERSION_ADDR) > 0 then
+    noteProcessing = string.format("(n-1-u//%d*2)*7//6+u", peek(INVERSION_ADDR))
+  else
+    noteProcessing = "n-1+u"
+  end
+  if peek(MODE_ADDR) > 0 then
+    noteProcessing = string.format("%s+%d", noteProcessing, peek(MODE_ADDR))
+  end
+  if peek(SCALE_ADDR) > 0 then
+    noteProcessing = string.format("(%s)*12//%d", noteProcessing, peek(SCALE_ADDR))
+  end
+  noteProcessing = "n=" .. noteProcessing
   local code = interp(tmpl, {
     partLen = patTicks(),
     waveSetCode = waveSetCode,
@@ -516,12 +529,13 @@ end
     ordLen = peek(ORDLEN_ADDR),
     ordInd = inds[2],
     songTicks = patTicks() * peek(ORDLEN_ADDR) - 1,
-    songPitch = peek(SONGST_ADDR) - 2,
+    songPitch = peek(SONGST_ADDR),
     octInd = inds[4],
     stInd = inds[7],
     slideInd = inds[5],
     keyEnvDur = peek(KEYDUR_ADDR) * (16 - peek(TEMPO_ADDR)),
     fillCode = interp(fillCode, { fillInd = inds[6] }),
+    noteProcessing = noteProcessing,
   })
   trace("\n" .. code)
   exit()
