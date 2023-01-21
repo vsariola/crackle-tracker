@@ -54,7 +54,8 @@ Instrument settings
   have terrible high frequency whine, so most of the time, only square
   and noise are really useful.
 - Octave: 12*octave is added to the note number.
-- Semitn: Added to the note number.
+- Interval: Interval (within the scale) that is added to the note
+  number. e.g. intervals 0, 2, 4 harmonize the major triads.
 - NoteDur: Controls how fast the pattern row advances or the duration of
   each pattern row. 1 = whole note, 2 = half note, 4 = quarter note, 8 =
   eight note, G (16) = sixteenth note
@@ -81,7 +82,9 @@ Song settings
   pentatonic, and 7 = diatonic.
 - Mode: What mode of the scale to use. In particular, when using the
   diatonic scale, 1 = ionian, 2 = dorian... etc.
-
+- Invers: Works as intended only when using diatonic scales. Controls
+  how much chords are inverted. 0 = off, 2 = all chords are inverted so
+  that bass changes as little as possible.
 
 
 Exporting

@@ -32,7 +32,7 @@ MEMUSED = PATS_ADDR + 16 * 16 - 0x14004 -- total bytes that need to be saved
 INSTR_LABELS = {
   "Wave",
   "Octave",
-  "Semitn",
+  "Intervl",
   "NoteDur",
   "Fill",
   "Mute",
@@ -267,10 +267,11 @@ function sound()
       local oct = peek(OCTAVE_ADDR + i * 8)
       local st = peek(SEMITN_ADDR + i * 8)
       rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
+      note = note + st
       if peek(INVERSION_ADDR) > 0 then
         note = (note - key // peek(INVERSION_ADDR) * 2) * 7 // 6
       end
-      note = note + st + key + peek(MODE_ADDR)
+      note = note + key + peek(MODE_ADDR)
       if peek(SCALE_ADDR) > 0 then
         note = note * 12 // peek(SCALE_ADDR)
       end
@@ -404,12 +405,12 @@ function TIC()
          ]
     or 1
     )-1 -- key change
+  ${intervalProcessing}
   ${noteProcessing}
   sfx(
    k, -- channel k uses wave k
    ${songPitch} -- global pitch:
     +12*d[k+${octInd}] -- octave
-    +d[k+${stInd}] -- semitones
     +n -- note
     -e%${envSteps}*d[k+${slideInd}] -- pitch drop
     ~0, -- convert to int
@@ -494,6 +495,13 @@ end
   for k = 0, 3 do
     table.insert(semitones, peek(SEMITN_ADDR + k * 8))
   end
+  local intervalProcessing = ""
+  if constant(semitones) then
+    if semitones[1] > 0 then
+      intervalProcessing = string.format("n=n+%d", semitones[1])
+    end
+    semitones = {}
+  end
   local slides = {}
   for k = 0, 3 do
     table.insert(slides, peek(SLIDE_ADDR + k * 8))
@@ -504,6 +512,9 @@ end
   for index, value in ipairs(data) do
     dataStr = dataStr .. string.format("%2d", value) .. ","
     if index % 10 == 0 then dataStr = dataStr .. "\n " end
+  end
+  if next(semitones) ~= nil then
+    intervalProcessing = string.format("n=n+d[%d+k]", inds[7])
   end
   local noteProcessing = nil
   if peek(INVERSION_ADDR) > 0 then
@@ -536,6 +547,7 @@ end
     keyEnvDur = peek(KEYDUR_ADDR) * (16 - peek(TEMPO_ADDR)),
     fillCode = interp(fillCode, { fillInd = inds[6] }),
     noteProcessing = noteProcessing,
+    intervalProcessing = intervalProcessing,
   })
   trace("\n" .. code)
   exit()
