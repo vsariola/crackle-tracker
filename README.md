@@ -74,9 +74,14 @@ Song settings
 - Tempo: Controls the tempo of the song. Actually, the envelope of each
   note it calculated with `%(16-tempo)`, so increasing the tempo also
   decreases the master volume.
-- Semitn: Added to all note values of the song, controlling essentially
+- Key: Added to all note values of the song, controlling essentially
   the key of the song.
-- KeyDur: How quickly the pattern rows of the key channel advance.
+- ChdDur: How quickly the pattern rows of the chord channel advance.
+- Scale: What scale to use. Most usefuls are: 0 = chromatic, 5 =
+  pentatonic, and 7 = diatonic.
+- Mode: What mode of the scale to use. In particular, when using the
+  diatonic scale, 1 = ionian, 2 = dorian... etc.
+
 
 
 Exporting

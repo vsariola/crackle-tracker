@@ -11,6 +11,9 @@ PATLEN_ADDR = 0x14006
 TEMPO_ADDR = 0x14007
 SONGST_ADDR = 0x14008
 KEYDUR_ADDR = 0x14009
+SCALE_ADDR = 0x1400A
+MODE_ADDR = 0x1400B
+INVERSION_ADDR = 0x1400C
 -- intrument 0 memory map, instr 1 at +8 addresses
 WAVE_ADDR = 0x14014
 OCTAVE_ADDR = 0x14015
@@ -37,22 +40,36 @@ INSTR_LABELS = {
 }
 INSTR_MIN = { 0, 0, 0, 1, 0, 0, 0 }
 INSTR_MAX = { 3, 7, 11, 16, 7, 1, 16 }
-SONG_LABELS = {
+SONG1_LABELS = {
   "OrdLen",
   "PatReps",
   "PatLen",
   "Tempo",
-  "Semitn",
-  "KeyDur"
+  "Key",
 }
-SONG_MIN = { 1, 0, 1, 0, 0, 1 }
-SONG_MAX = { 16, 16, 16, 7, 11, 16 }
+SONG2_LABELS = {
+  "ChdDur",
+  "Scale",
+  "Mode",
+  "Invers",
+}
+SONG1_MIN = { 1, 0, 1, 0, 0 }
+SONG1_MAX = { 16, 16, 16, 7, 11 }
+SONG2_MIN = { 1, 0, 0, 0 }
+SONG2_MAX = { 16, 8, 11, 11 }
+SCALE_NAMES = { "chromatic", "1-note", "2-note", "3-note", "tetratonic", "pentatonic", "wholetone", "diatonic",
+  "octatonic" }
+NOTE_NAMES = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" }
+CHORD_TYPES = { "dim", "maj", "min", "min", "maj", "maj", "min" }
+DIATONIC_MODE_NAMES = { "locrian", "ionian", "dorian", "phrygian", "lydian", "mixolyd", "aeolian" }
+PENTATONIC_MODE_NAMES = { "maj.penta", "egyptian", "min.blues", "maj.blues", "min.penta" }
 
 -- states for the table editors (cursor x,y within the editor etc.)
 orderState = {}
 patsState = {}
 instrState = {}
-songState = {}
+song1State = {}
+song2State = {}
 -- states for the buttons
 saveBtn = {}
 expBtn = {}
@@ -62,7 +79,7 @@ playBtn = {}
 stopBtn = {}
 
 playing = false
-tabOrder = { instrState, orderState, patsState, songState }
+tabOrder = { instrState, orderState, patsState, song1State, song2State }
 focus = nil
 dialog = nil
 tooltip = {}
@@ -81,12 +98,49 @@ function TIC()
   local durSec = songTicks() / 60
   local durMin = math.floor(durSec / 60)
   durSec = math.floor(durSec - durMin * 60)
-  local durStr = (durMin > 0 and (durMin .. "min ") or "") .. durSec .. "s"
-  print("Song duration: " .. durStr, 0, 130, 15, 1, 1, 1)
-  print("BPM: " .. math.floor(bpm() + .5), 130, 130, 15, 1, 1, 1)
+  local durStr = (durMin > 0 and (durMin .. "min") or "") .. durSec .. "s"
+  print("Time:" .. durStr, 0, 130, 15, 1, 1, 1)
+  print("BPM:" .. math.floor(bpm() + .5), 61, 130, 15, 1, 1, 1)
+
+  local songmode = peek(MODE_ADDR)
+  if peek(SCALE_ADDR) > 0 then
+    songmode = songmode * 12 // peek(SCALE_ADDR)
+  end
+  local scalename = "Scale:" .. (NOTE_NAMES[(peek(SONGST_ADDR) + songmode) % 12 + 1] or "")
+  if peek(SCALE_ADDR) == 7 then
+    -- when the scale is diatonic, print exactly what mode this is
+    scalename = scalename .. "-" .. (DIATONIC_MODE_NAMES[peek(MODE_ADDR) % 7 + 1] or "")
+  elseif peek(SCALE_ADDR) == 5 then
+    scalename = scalename .. "-" .. (PENTATONIC_MODE_NAMES[peek(MODE_ADDR) % 5 + 1] or "")
+  else
+    scalename = scalename .. "-" .. SCALE_NAMES[peek(SCALE_ADDR) + 1]
+  end
+  print(scalename, 100, 130, 15, 1, 1, 1)
+
+  local curkey = getkey(t)
+  local rootnote = curkey + peek(MODE_ADDR)
+  local rootst = rootnote
+  if peek(SCALE_ADDR) > 0 then
+    rootst = rootst * 12 // peek(SCALE_ADDR)
+  end
+  chordname = "Chord:" .. NOTE_NAMES[(rootst + peek(SONGST_ADDR)) % 12 + 1]
+  if peek(SCALE_ADDR) == 7 then
+    chordname = chordname .. CHORD_TYPES[rootnote % 7 + 1]
+  end
+  if peek(INVERSION_ADDR) > 0 then
+    local inversion = curkey // peek(INVERSION_ADDR)
+    if inversion > 0 then
+      local bass = rootnote + (-inversion * 2) * 7 // 6
+      if peek(SCALE_ADDR) > 0 then
+        bass = bass * 12 // peek(SCALE_ADDR)
+      end
+      chordname = chordname .. "/" .. NOTE_NAMES[(bass + peek(SONGST_ADDR)) % 12 + 1]
+    end
+  end
+  print(chordname, 187, 130, 15, 1, 1, 1)
+
 
   print("Crackle\nTracker", 0, 0, 15, 1, 1, 1)
-  print("v0.1", 225, 131, 15, 1, 1, 1)
   iconbtn(newBtn, 1, 0, 14, new, "New")
   iconbtn(saveBtn, 3, 0, 30, save, "Save")
   iconbtn(expBtn, 5, 0, 46, export, "Export")
@@ -94,24 +148,27 @@ function TIC()
   iconbtn(rewindBtn, 48, 29, 69, rewind, "Play from start", 1)
   iconbtn(playBtn, 49, 37, 69, play, "Play (space)", 1)
   iconbtn(stopBtn, 50, 45, 69, stop, "Stop (space)", 1)
-  rect(10, 77, 41, 1, 1)
+  rect(0, 77, 79, 1, 1)
 
   print("Song", 10, 70, 15, 1, 1, 5)
-  label(SONG_LABELS, 21, 80, 24, 2)
-  editor(songState, 45, 79, 1, 6, 0, 1, SONG_MIN, SONG_MAX)
+  label(SONG1_LABELS, 4, 80, 24, 2)
+  editor(song1State, 28, 79, 1, 5, 0, 1, SONG1_MIN, SONG1_MAX)
+  label(SONG2_LABELS, 43, 80, 24, 2)
+  editor(song2State, 67, 79, 1, 4, 5, 1, SONG2_MIN, SONG2_MAX)
+
 
   print("Instrs", 46, 0, 15, 1, 1, 5)
   label(INSTR_LABELS, 21, 16, 24, 2)
-  editor(instrState, 45, 15, 4, 7, 1, 8, INSTR_MIN, INSTR_MAX, true)
+  editor(instrState, 45, 15, 4, 7, 16, 8, INSTR_MIN, INSTR_MAX, true)
   hextitle(46, 8, 4)
 
   print("Order", 84, 0, 15, 1, 1, 1)
-  editor(orderState, 83, 15, 5, peek(ORDLEN_ADDR), 5, 16, -1, 15, true)
+  editor(orderState, 83, 15, 5, peek(ORDLEN_ADDR), 80, 16, -1, 15, true)
   spr(0, 112, 7, 0)
   hextitle(84, 8, 4)
 
   print("Patterns", 129, 0, 15, 1, 1, 1)
-  editor(patsState, 128, 15, 16, peek(PATLEN_ADDR), 10, 16, -1, 35, true)
+  editor(patsState, 128, 15, 16, peek(PATLEN_ADDR), 160, 16, -1, 35, true)
   hextitle(129, 8, 16)
 
   if tooltip.src then
@@ -168,6 +225,15 @@ function bpm()
   return 30 * 60 / (16 - peek(TEMPO_ADDR))
 end
 
+function getkey(t)
+  local keypat = peek(ORDER_ADDR + 64 + t // patTicks())
+  if keypat == 255 then
+    return 0, keypat, 0
+  end
+  local keyrow = t / peek(KEYDUR_ADDR) // (16 - peek(TEMPO_ADDR)) % peek(PATLEN_ADDR)
+  return peek(PATS_ADDR + keypat * 16 + keyrow), keypat, keyrow
+end
+
 function sound()
   local ptic = patTicks()
   local stic = ptic * peek(ORDLEN_ADDR)
@@ -176,12 +242,9 @@ function sound()
   for i = 0, 4 do
     rect(83 + i * 7, pat * 7 + 15, 7, 7, 2 + i)
   end
-  local keypat = peek(ORDER_ADDR + 64 + pat)
-  local key = 0
+  local key, keypat, keyrow = getkey(t)
   if keypat < 255 then
-    local row = t / peek(KEYDUR_ADDR) // noteticks % peek(PATLEN_ADDR)
-    key = peek(PATS_ADDR + keypat * 16 + row)
-    rect(128 + keypat * 7, row * 7 + 15, 7, 7, 6)
+    rect(128 + keypat * 7, keyrow * 7 + 15, 7, 7, 6)
   end
   for i = 0, 3 do
     poke(0x100E4 + 66 * i, i * 16)
@@ -204,8 +267,15 @@ function sound()
       local oct = peek(OCTAVE_ADDR + i * 8)
       local st = peek(SEMITN_ADDR + i * 8)
       rect(128 + col * 7, row * 7 + 15, 7, 7, 2 + i)
-      note = note - peek(SLIDE_ADDR + i * 8) * (notepos % noteticks) + key
-      sfx(wave, oct * 12 + st + note + peek(SONGST_ADDR) ~ 0, 3, i, env)
+      if peek(INVERSION_ADDR) > 0 then
+        note = (note - key // peek(INVERSION_ADDR) * 2) * 7 // 6
+      end
+      note = note + st + key + peek(MODE_ADDR)
+      if peek(SCALE_ADDR) > 0 then
+        note = note * 12 // peek(SCALE_ADDR)
+      end
+      note = note - peek(SLIDE_ADDR + i * 8) * (notepos % noteticks)
+      sfx(wave, oct * 12 + note + peek(SONGST_ADDR) ~ 0, 3, i, env)
     end
     ::continue::
   end
@@ -620,7 +690,7 @@ function editor(s, x, y, w, h, ad, st, mi, ma, hex)
   pw, ph = w * 7, h * 7
   s.x = s.x or 0
   s.y = s.y or 0
-  ad = ad * 16 + 0x14004
+  ad = ad + 0x14004
   if focus == s then
     local m = ad + s.x * st + s.y
     if keyp(54) then
