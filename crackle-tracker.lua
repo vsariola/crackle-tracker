@@ -55,7 +55,7 @@ SONG2_LABELS = {
   "Mode",
   "Invers",
 }
-SONG1_MIN = { 1, 0, 1, 0, 0 }
+SONG1_MIN = { 1, 1, 1, 0, 0 }
 SONG1_MAX = { 16, 16, 16, 7, 11 }
 SONG2_MIN = { 1, 0, 0, 0 }
 SONG2_MAX = { 16, 8, 11, 11 }
@@ -220,7 +220,11 @@ function songTicks()
 end
 
 function patTicks()
-  return peek(PATREPS_ADDR) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR)
+  local ret = peek(PATREPS_ADDR) * (16 - peek(TEMPO_ADDR)) * peek(PATLEN_ADDR)
+  if ret == 0 then
+    return 1
+  end
+  return ret
 end
 
 function bpm()
